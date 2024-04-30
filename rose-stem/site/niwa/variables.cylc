@@ -15,4 +15,6 @@
 
 {% do site_vars.update({"scripts_platform": "cs500"}) %}
 
+{% do site_vars.update({"housekeeping_platform": "cs500"}) %}
+
 {% do LOG.debug("Finished in site/niwa/variables.cylc") %}

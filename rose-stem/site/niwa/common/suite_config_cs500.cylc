@@ -1,35 +1,34 @@
 {% do LOG.debug("Entered site/niwa/common/suite_config_cs500.cylc") %}
 
-{% set cs500_modules = 'module purge'~
-                       'module load NIWA'~
-                       'module load YAXT/0.9.0-iimpi-2018b XIOS/r1593-iimpi-2018b-NC4-parallel'~
-                       'module load pfunit/3.2.9-iimpi-2018b PSyclone/2.3.0-GCC-7.1.0-Python-3.9'~
-                       'module load Jinja2/3.0.3-GCC-7.1.0-Python-3.9 Rose_Picker/1.0.0' %}
+{% set cs500_modules = 'module purge ; '~
+                       'module load NIWA ; '~
+                       'module load YAXT/0.9.0-iimpi-2018b XIOS/r1593-iimpi-2018b-NC4-parallel ; '~
+                       'module load pfunit/3.2.9-iimpi-2018b PSyclone/2.3.0-GCC-7.1.0-Python-3.9 ; '~
+                       'module load Jinja2/3.0.3-GCC-7.1.0-Python-3.9 Rose_Picker/2.0.0' %}
 
-{% set cs500_build_setup = 'export FC=ifort FPP="cpp -P -x f95-cpp-input"'~
-                           'export LDMPI=mpif90 PFUNIT=$EBROOTPFUNIT FFLAGS="-I$EBROOTXIOS/inc -real-size 64"' %}
+{% set cs500_build_setup = 'export FC=ifort FPP="cpp -x f95-cpp-input" ; '~
+                           'export LDMPI=mpif90 PFUNIT=$EBROOTPFUNIT FFLAGS="-I$EBROOTPFUNIT/mod"' %}
 
-{% set cs500_plot = 'module purge'~
+{% set cs500_plot = 'module purge ; '~
                     'module load Anaconda3/2021.05-GCC-7.1.0' %}
 
 
 [runtime]
 
-    [[CS500]]
+    [[CS500_BASE]]
         [[[environment]]]
             SITE = 'niwa'
             UMDIR = /opt/niwa/um_sys
             BUILD_ROOT = ${CYLC_TASK_WORK_DIR}/${CYLC_WORKFLOW_NAME_BASE}_${USER}_cs500
-            SOURCE_ROOT = $CYLC_WORKFLOW_SHARE_DIR/source_cs500
+            SOURCE_ROOT = $CYLC_WORKFLOW_SHARE_DIR/source
             OUTPUT_ROOT = $CYLC_WORKFLOW_SHARE_DIR/output_cs500
 
-
     [[CS500_BG]]
-        inherit = CS500
+        inherit = CS500_BASE
         platform = maui-ancil-background
 
     [[CS500_SL]]
-        inherit = CS500
+        inherit = CS500_BASE
         platform = maui-ancil-slurm
         [[[directives]]]
             --account = niwa00001
@@ -67,22 +66,21 @@
 
     [[CS500_PLOT]]
         inherit = CS500_BG
-        {{ generate_script("pre-script", [cx500_plot]) }}
+        {{ generate_script("pre-script", [cs500_plot]) }}
 
-    [[CS500_TECH]]
-        inherit = CS500_BG
-
-    [[CS500_CHECK]]
-        inherit = CS500_BG
+    [[CS500_TECH_TESTS_INTEL]]
+        inherit=CS500_BG
+        {{ generate_script("pre-script", [cs500_modules]) }}
 
     [[CS500_EXPORT-SOURCE]]
         inherit = CS500_BG
         [[[environment]]]
-            hostname = 'w-mauivlab01.maui.niwa.co.nz'
-            SITE = 'niwa'
-            PLATFORM_SYNC = true
+            PLATFORM_SYNC = false
 
     [[CS500_SCRIPTS]]
-        inherit = CS500_TECH
+        inherit = CS500_BG
+
+    [[CS500_HOUSEKEEPING]]
+        inherit=CS500_BG
 
 {% do LOG.debug("Finished in site/niwa/common/suite_config_cs500.cylc") %}

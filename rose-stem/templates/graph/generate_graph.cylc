@@ -88,7 +88,11 @@
 {# Waits for all tasks on that platform to finish before ruuning #}
 {% if HOUSEKEEPING %}
     {% for platform in requested_platforms %}
-        {% set housekeeping_task = "housekeep_"~platform %}
+        {% if "housekeeping_platform" in site_vars %}
+            {% set housekeeping_task = "housekeep_"~site_vars["housekeeping_platform"] %}
+        {% else %}
+            {% set housekeeping_task = "housekeep_"~platform %}
+        {% endif %}
         {% do tasks_to_run.update({housekeeping_task: {} }) %}
         {% do graph_sections.append([
             platform|upper~":succeed-all?",

@@ -10,7 +10,7 @@
                         threads=1,
                         xios_nodes=0,
                         ocean_nodes=0,
-                        river_node=0) %}
+                        river_nodes=0) %}
             --ntasks = {{mpi_ranks|int + xios_nodes|int}}
             --cpus-per-task = {{threads|int}}
 {% endmacro %}

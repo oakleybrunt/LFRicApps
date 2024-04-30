@@ -20,6 +20,7 @@ WORKING_CONFIGS = {
         "build_gungho_model_spice_intel_fast-debug-64bit",
     ],
     "nci": ["all"],
+    "niwa" : ["all"],
 }
 
 

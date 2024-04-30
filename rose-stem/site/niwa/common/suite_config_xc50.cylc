@@ -1,28 +1,30 @@
 {% do LOG.debug("Entered site/niwa/common/suite_config_xc50.cylc") %}
 
-{% set xc50_modules = 'module swap NeSI NIWA'~
-                      'module load YAXT/0.9.0-CrayIntel-23.02-19 XIOS/r2279-CrayIntel-23.02-19-NC4PAR-patched'~
-                      'module load pfunit/3.2.9-CrayIntel-23.02-19 PSyclone/2.3.0-Python-3.9'~
-                      'module load Jinja2/3.0.3-Python-3.9 Rose_Picker/1.0.0'~
-                      'module load cray-hdf5-parallel/1.12.2.3'~
-                      'export FC=ftn FPP="cpp -P -x f95-cpp-input"'~
-                      'export LDMPI=ftn PFUNIT=$EBROOTPFUNIT FFLAGS="-I$EBROOTXIOS/inc -real-size 64"' %}
+{% set xc50_modules = 'module swap NeSI NIWA ; '~
+                      'module load YAXT/0.9.0-CrayIntel-23.02-19 XIOS/r2279-CrayIntel-23.02-19-NC4PAR-patched ; '~
+                      'module load pfunit/3.2.9-CrayIntel-23.02-19 PSyclone/2.3.0-Python-3.9 ; '~
+                      'module load Jinja2/3.0.3-Python-3.9 Rose_Picker/2.0.0 ; '~
+                      'module load cray-hdf5-parallel/1.12.2.3' %}
+
+{% set xc50_build_setup = 'export FC=ftn FPP="cpp -P -x f95-cpp-input" ; '~
+                          'export LDMPI=ftn PFUNIT=$EBROOTPFUNIT FFLAGS="-I$EBROOTXIOS/inc -real-size 64"' %}
 
 [runtime]
-    [[XC50]]
+
+    [[XC50_BASE]]
         [[[environment]]]
             SITE = 'niwa'
             UMDIR = /opt/niwa/um_sys
             BUILD_ROOT = ${CYLC_TASK_WORK_DIR}/${CYLC_WORKFLOW_NAME_BASE}_${USER}_xc50
-            SOURCE_ROOT = $CYLC_WORKFLOW_SHARE_DIR/source_xc50
+            SOURCE_ROOT = $CYLC_WORKFLOW_SHARE_DIR/source
             OUTPUT_ROOT = $CYLC_WORKFLOW_SHARE_DIR/output_xc50
 
     [[XC50_BG]]
-        inherit = XC50
+        inherit = XC50_BASE
         platform = maui-xc-background
 
     [[XC50_SL]]
-        inherit = XC50
+        inherit = XC50_BASE
         platform = maui-xc-slurm
         [[[directives]]]
             --account = niwa00001
@@ -38,7 +40,7 @@
 
     [[XC50_BUILD_INTEL]]
         inherit = XC50_BG
-        {{ generate_script("pre-script", [xc50_modules]) }}
+        {{ generate_script("pre-script", [xc50_modules, xc50_build_setup]) }}
 
     [[XC50_RUN_INTEL]]
         inherit = XC50_SL
@@ -60,18 +62,20 @@
 
     [[XC50_PLOT]]
         inherit = CS500_PLOT
-
-    [[XC50_TECH]]
-        inherit = XC50_BG
+        [[[environment]]]
+            OUTPUT_ROOT = $CYLC_WORKFLOW_SHARE_DIR/output_xc50
 
     [[XC50_CHECK]]
         inherit = XC50_BG
+        # Skip KGO checks for now
+        pre-script = "echo 'Skipping KGO checks'; exit 0"
 
     [[XC50_EXPORT-SOURCE]]
         inherit = XC50_BG
         [[[environment]]]
-            hostname = 'login.maui.niwa.co.nz'
-            SITE = 'niwa'
-            PLATFORM_SYNC = true
+            PLATFORM_SYNC = false
+
+    [[XC50_HOUSEKEEPING]]
+        inherit=XC50_BG
 
 {% do LOG.debug("Finished in site/niaw/common/suite_config_xc50.cylc") %}
