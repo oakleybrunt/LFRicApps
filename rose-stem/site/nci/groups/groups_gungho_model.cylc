@@ -20,6 +20,7 @@
         "gungho_model_deep-hot-jupiter-C24_MG_gadi_intel_fast-debug-64bit",
         "gungho_model_earth-like-C24_MG_gadi_intel_fast-debug-64bit",
         "gungho_model_force_profile-BiP4x4-600x400_gadi_intel_fast-debug-64bit",
+        "gungho_model_geostrophic-BiP4x4-600x400_gadi_intel_fast-debug-64bit",
         "gungho_model_held-suarez-C24_MG_gadi_intel_fast-debug-64bit",
         "gungho_model_lfric-real-domain-C48_MG_gadi_intel_fast-debug-64bit",
         "gungho_model_no-timestep-method-C12_gadi_intel_fast-debug-64bit",

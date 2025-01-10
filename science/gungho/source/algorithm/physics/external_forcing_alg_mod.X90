@@ -19,6 +19,7 @@ module external_forcing_alg_mod
                                              wind_forcing_held_suarez,           &
                                              wind_forcing_filtering,             &
                                              wind_forcing_diffusion,             &
+                                             geostrophic_forcing,                &
                                              filtering_order,                    &
                                              diffusion_order,                    &
                                              diffusion_coefficient,              &
@@ -62,6 +63,7 @@ module external_forcing_alg_mod
   use sci_set_any_dof_kernel_mod,      only: set_any_dof_kernel_type
 
   use temp_tend_profile_alg_mod,       only: temp_tend_profile_alg
+  use geostrophic_forcing_alg_mod,     only: geostrophic_forcing_alg
   use timer_mod,                       only: timer
 
   use w2_filter_alg_mod,               only: w2_filter_alg
@@ -339,6 +341,18 @@ contains
       wind_forcing_done = .true. ! Collect this increment later on
 
       nullify( w2_rmultiplicity, u_physics, dA )
+
+    end if
+
+    if ( geostrophic_forcing ) then
+      if ( .not. wind_forcing_done ) then
+        call du_forcing%initialise( vector_space = u%get_function_space() )
+        call invoke(setval_c(du_forcing, 0.0_r_def))
+      end if
+
+      call geostrophic_forcing_alg( du_forcing, exner, time_now )
+
+      wind_forcing_done = .true.
 
     end if
 
