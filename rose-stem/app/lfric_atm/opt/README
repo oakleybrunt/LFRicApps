@@ -79,6 +79,8 @@ Configuration specific settings
 - 6hr_lbc - a shorter LBC file for use in RA computational performance domain
             (c.f. the 24 hour one which doesn't work)
 - june_case - change start date for 2nd June case study
+- lowres_stp - override maximum wavenumber for low resolution (e.g. C12) runs
+               with stochastic physics
 - ls_and_jedi - diagnostics and date for JEDI testing
 - ncas-data - override data paths on Archer
 - no_diags - turn off diagnostic output
