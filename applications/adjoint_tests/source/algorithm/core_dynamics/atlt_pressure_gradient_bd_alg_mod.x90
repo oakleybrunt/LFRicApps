@@ -77,6 +77,7 @@ module atlt_pressure_gradient_bd_alg_mod
 
     ! Inner products
     real(kind=r_def)               :: r_u_inner_prod
+    real(kind=r_def),    parameter :: r_u_sf = 1.0E-24_r_def
     real(kind=r_def)               :: exner_inner_prod
     real(kind=r_def)               :: theta_inner_prod
     real(kind=r_def), dimension(3) :: moist_dyn_inner_prod
@@ -112,7 +113,7 @@ module atlt_pressure_gradient_bd_alg_mod
     call moist_dyn(2_i_def) % copy_field_properties( ls_moist_dyn(2_i_def) )
     call moist_dyn(3_i_def) % copy_field_properties( ls_moist_dyn(3_i_def) )
     reference_element => mesh%get_reference_element()
-    qrf = quadrature_face_type( element_order_h, element_order_v + 2, .true., .false., &
+    qrf = quadrature_face_type( element_order_h + 2, element_order_v + 2, .true., .false., &
                                 reference_element,  quadrature_rule )
     call r_u % copy_field_properties( r_u_input )
     call exner % copy_field_properties( exner_input )
@@ -166,7 +167,7 @@ module atlt_pressure_gradient_bd_alg_mod
                  x_innerproduct_x( moist_dyn_inner_prod(3_i_def), moist_dyn(3_i_def) ) )
 
     inner1 = 0.0_r_def
-    inner1 = inner1 + r_u_inner_prod
+    inner1 = inner1 + r_u_inner_prod*r_u_sf
     inner1 = inner1 + exner_inner_prod
     inner1 = inner1 + theta_inner_prod
     inner1 = inner1 + moist_dyn_inner_prod(1_i_def)
@@ -174,7 +175,7 @@ module atlt_pressure_gradient_bd_alg_mod
     inner1 = inner1 + moist_dyn_inner_prod(3_i_def)
     write(log_scratch_space, *) "atlt_pressure_gradient_bd inner products:"
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
-    write(log_scratch_space, *) "r_u inner product = ", r_u_inner_prod
+    write(log_scratch_space, *) "r_u inner product = ", r_u_inner_prod*r_u_sf
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
     write(log_scratch_space, *) "exner inner product = ", exner_inner_prod
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
@@ -193,6 +194,9 @@ module atlt_pressure_gradient_bd_alg_mod
     moist_dyn_moist_dyn_input_inner_prod(1_i_def) = 0.0_r_def
     moist_dyn_moist_dyn_input_inner_prod(2_i_def) = 0.0_r_def
     moist_dyn_moist_dyn_input_inner_prod(3_i_def) = 0.0_r_def
+
+    ! Scaling fields
+    call invoke( inc_a_times_X( r_u_sf, r_u ) )
 
     ! < AMx, x >
     call invoke( atl_pressure_gradient_bd_kernel_type( r_u, stencil_extent,            &
