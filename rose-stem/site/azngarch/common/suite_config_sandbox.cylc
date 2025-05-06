@@ -8,7 +8,7 @@
 {% set azng_base = 'umask 0022 ; '~
                    'module purge ; '~
                    'module use ~spackadmin/spack-0.22.2/modules/linux-ubuntu22.04-zen2
-module load fcm/2021.05.0/gcc-14.2.0-t4rinp py-psyclone/3.1.0/gcc-14.2.0-je7t5s rose-picker/2.0.0/gcc-12.2.0-jcztbm subversion/1.14.2/gcc-14.2.0-4zbbqs xxdiff/2023-01-10/gcc-14.2.0-ainget py-jinja2/3.1.2/gcc-14.2.0-nogypf ; ' %}
+                    module load fcm/2021.05.0/gcc-14.2.0-t4rinp py-psyclone/3.1.0/gcc-14.2.0-je7t5s rose-picker/2.0.0/gcc-12.2.0-jcztbm subversion/1.14.2/gcc-14.2.0-4zbbqs xxdiff/2023-01-10/gcc-14.2.0-ainget py-jinja2/3.1.2/gcc-14.2.0-nogypf ; ' %}
 
 {% set azng_compiler_gnu = 'source /shared/home/spackadmin/bin/prg_gcc-14.2.0-offload-psy-3.0 || true' %}
 
