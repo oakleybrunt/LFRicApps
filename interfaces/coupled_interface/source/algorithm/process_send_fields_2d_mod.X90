@@ -63,7 +63,7 @@ module process_send_fields_2d_mod
   !> @param[in, out] fld coupling field
   !> @param[inout] modeldb The working data set for a model run
   !> @param[in] ldump_prep Flag indicates that pre-dump preparation is required
-  subroutine process_send_fields_2d(fld, modeldb, ldump_prep)
+  subroutine process_send_fields_2d(fld, modeldb)
 
     use sci_multi_extract_kernel_mod, only: multi_extract_kernel_type
     use value_based_mask_kernel_mod,  only: value_based_mask_kernel_type
@@ -72,7 +72,6 @@ module process_send_fields_2d_mod
     implicit none
     type( field_type ), pointer, intent(inout)   :: fld
     type( modeldb_type ),        intent(inout)   :: modeldb
-    logical,                     intent(in)      :: ldump_prep
     ! Local variables
     type( field_collection_type ), pointer       :: depository
     type( field_type ), pointer                  :: r_sea_ice_frac_raw
@@ -99,107 +98,92 @@ module process_send_fields_2d_mod
     call depository%get_field("r_sea_ice_frac_raw", r_sea_ice_frac_raw)
 
     ! Calculate the reciprocal of acc_step
+    ! If this is the first step after a restart then the division by 
+    ! acc_step has already been done in accumulate_send_fields before
+    ! the field was written to the restart file so we set r_acc_step=1
+    ! as we still need to divide by sea-ice fraction and copy values from
+    ! depository field (dep_fld) to fld ready for coupling.
     call modeldb%values%get_value( 'accumulation_steps', acc_step )
-    r_acc_step = 1.0_r_def/acc_step
-
-    ! We need to detect if this is the first step after a start/restart.
-    ! If it is then we can either load coupling fields from a
-    ! checkpoint file, if one exists, or we can simply initialise all
-    ! coupling fields to zero if there are no initial values to work with.
     if (modeldb%clock%get_step() /=  modeldb%clock%get_first_step() ) then
-      select case(fld_name)
-        case ("lf_taux")
-          call invoke(setval_X(fld, dep_fld), &
-                      inc_a_times_X( r_acc_step, fld ) )
-        case ("lf_tauy")
-          call invoke(setval_X(fld, dep_fld), &
-                      inc_a_times_X( r_acc_step, fld ) )
-        case ("lf_solar")
-          call invoke(setval_X(fld, dep_fld), &
-                      inc_a_times_X( r_acc_step, fld ) )
-        case ("lf_heatflux")
-          ! Concoct our heatflux value from various contributing fields.
-          call invoke(setval_X(fld, dep_fld), &
-                      inc_a_times_X( r_acc_step, fld ) )
-        case ("lf_train")
-          !large scale rain
-          call invoke(setval_X(fld, dep_fld), &
-                      inc_a_times_X( r_acc_step, fld ) )
-        case ("lf_tsnow")
-          !large scale snow
-          call invoke(setval_X(fld, dep_fld), &
-                       inc_a_times_X( r_acc_step, fld ) )
-        case ("lf_w10")
-          !10m wind
-          call invoke(setval_X(fld, dep_fld), &
-                       inc_a_times_X( r_acc_step, fld ) )
-        case ("lf_evap")
-          ! Extract the oceanic evaporation from the ocean tile
-          call invoke(setval_X(fld, dep_fld), &
-                      inc_a_times_X( r_acc_step, fld ) )
-        case ("lf_topmelt")
-          ! Sea ice top melt
-          ! Some fields will need to be divided by ice fraction that has
-          ! just been passed from the sea ice model before being coupled
-          ! (time-travelling sea ice)
-          call invoke(setval_X(fld, dep_fld), &
-                      inc_a_times_X( r_acc_step, fld ), &
-                      inc_X_times_Y(fld, r_sea_ice_frac_raw) )
-        case ("lf_iceheatflux")
-          ! Sea ice surface to sub-surface heat flux
-          ! Plus time-travelling sea ice
-          call invoke(setval_X(fld, dep_fld), &
-                      inc_a_times_X( r_acc_step, fld ), &
-                      inc_X_times_Y(fld, r_sea_ice_frac_raw) )
-        case ("lf_sublimation")
-          ! Sea ice sublimation from the snowice_sublimation
-          ! Plus time-travelling sea ice
-          call invoke(setval_X(fld, dep_fld), &
-                      inc_a_times_X( r_acc_step, fld ), &
-                      inc_X_times_Y(fld, r_sea_ice_frac_raw) )
-        case ("lf_iceskint")
-           ! Sea ice skin temperature
-           call invoke(setval_X(fld, dep_fld), &
-                       inc_a_times_X( r_acc_step, fld ) )
-        case ("lf_pensolar")
-          ! Penetrating_solar_marine_fraction
-          ! Plus time-travelling sea ice
-          call invoke(setval_X(fld, dep_fld), &
-                      inc_a_times_X( r_acc_step, fld ), &
-                      inc_X_times_Y(fld, r_sea_ice_frac_raw) )
-        case ("lf_rsurf")
-          ! Surface river runoff
-          call invoke(setval_X(fld, dep_fld), &
-                      inc_a_times_X( r_acc_step, fld ) )
-        case ("lf_rsub")
-          ! Sub-surface river runoff
-          call invoke(setval_X(fld, dep_fld), &
-                      inc_a_times_X( r_acc_step, fld ) )
-        case default
-          write(log_scratch_space, '(3A)' )                              &
-                            "ERROR: accumulate_send_fields_2d, field: ", &
-                            trim(fld_name), ": can not be found"
-          call log_event( log_scratch_space, LOG_LEVEL_ERROR )
-      end select
+       r_acc_step = 1.0_r_def/acc_step
+    else
+       r_acc_step = 1.0_r_def
+    endif
 
-      ! If this is the last accumulation before the end of the run, then
-      ! there will be no coupling exchange with these values. They must be
-      ! preserved in the restart dump in the exact form in which they will be
-      ! used on the first coupling exchange of any future cycle or new run which starts
-      ! from that dump. We can NOT simply allow the accumulated values to
-      ! be stored because:
-      ! a) any subsequent run using the dump would have to be clairvoyant
-      !    enough to know the coupling frequency and timestep used in the
-      !    run which generated a given dump
-      ! b) any run wishing to use the dump would be constrained to use
-      !    the same timestep and coupling frequency as the run which generated the dump
-      ! c) it would be impossible to alter timestep or coupling frequencies when starting
-      !    from an existing dump without wrecking the values used for coupling.
-      if (ldump_prep) then
-        ! Multiply fields to be saved by the reciprocal of acc_step
-        call invoke(inc_a_times_X( r_acc_step, dep_fld ))
-      endif
-   endif
+    select case(fld_name)
+      case ("lf_taux")
+        call invoke(setval_X(fld, dep_fld), &
+                    inc_a_times_X( r_acc_step, fld ) )
+      case ("lf_tauy")
+        call invoke(setval_X(fld, dep_fld), &
+                    inc_a_times_X( r_acc_step, fld ) )
+      case ("lf_solar")
+        call invoke(setval_X(fld, dep_fld), &
+                    inc_a_times_X( r_acc_step, fld ) )
+      case ("lf_heatflux")
+        ! Concoct our heatflux value from various contributing fields.
+        call invoke(setval_X(fld, dep_fld), &
+                    inc_a_times_X( r_acc_step, fld ) )
+      case ("lf_train")
+        !large scale rain
+        call invoke(setval_X(fld, dep_fld), &
+                    inc_a_times_X( r_acc_step, fld ) )
+      case ("lf_tsnow")
+        !large scale snow
+        call invoke(setval_X(fld, dep_fld), &
+                     inc_a_times_X( r_acc_step, fld ) )
+      case ("lf_w10")
+        !10m wind
+        call invoke(setval_X(fld, dep_fld), &
+                     inc_a_times_X( r_acc_step, fld ) )
+      case ("lf_evap")
+        ! Extract the oceanic evaporation from the ocean tile
+        call invoke(setval_X(fld, dep_fld), &
+                    inc_a_times_X( r_acc_step, fld ) )
+      case ("lf_topmelt")
+        ! Sea ice top melt
+        ! Some fields will need to be divided by ice fraction that has
+        ! just been passed from the sea ice model before being coupled
+        ! (time-travelling sea ice)
+        call invoke(setval_X(fld, dep_fld), &
+                    inc_a_times_X( r_acc_step, fld ), &
+                    inc_X_times_Y(fld, r_sea_ice_frac_raw) )
+      case ("lf_iceheatflux")
+        ! Sea ice surface to sub-surface heat flux
+        ! Plus time-travelling sea ice
+        call invoke(setval_X(fld, dep_fld), &
+                    inc_a_times_X( r_acc_step, fld ), &
+                    inc_X_times_Y(fld, r_sea_ice_frac_raw) )
+      case ("lf_sublimation")
+        ! Sea ice sublimation from the snowice_sublimation
+        ! Plus time-travelling sea ice
+        call invoke(setval_X(fld, dep_fld), &
+                    inc_a_times_X( r_acc_step, fld ), &
+                    inc_X_times_Y(fld, r_sea_ice_frac_raw) )
+      case ("lf_iceskint")
+         ! Sea ice skin temperature
+         call invoke(setval_X(fld, dep_fld), &
+                     inc_a_times_X( r_acc_step, fld ) )
+      case ("lf_pensolar")
+        ! Penetrating_solar_marine_fraction
+        ! Plus time-travelling sea ice
+        call invoke(setval_X(fld, dep_fld), &
+                    inc_a_times_X( r_acc_step, fld ), &
+                    inc_X_times_Y(fld, r_sea_ice_frac_raw) )
+      case ("lf_rsurf")
+        ! Surface river runoff
+        call invoke(setval_X(fld, dep_fld), &
+                    inc_a_times_X( r_acc_step, fld ) )
+      case ("lf_rsub")
+        ! Sub-surface river runoff
+        call invoke(setval_X(fld, dep_fld), &
+                    inc_a_times_X( r_acc_step, fld ) )
+      case default
+        write(log_scratch_space, '(3A)' )                              &
+                          "ERROR: process_send_fields_2d, field: ", &
+                          trim(fld_name), ": can not be found"
+        call log_event( log_scratch_space, LOG_LEVEL_ERROR )
+    end select
 
   end subroutine process_send_fields_2d
 

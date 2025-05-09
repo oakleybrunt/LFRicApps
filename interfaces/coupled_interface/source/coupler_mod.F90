@@ -361,15 +361,15 @@ module coupler_mod
       select type(field)
       type is (field_type)
         field_ptr => field
-        call accumulate_send_fields_2d(field_ptr, depository, modeldb%clock)
+        call accumulate_send_fields_2d(field_ptr, depository, acc_step, &
+                                       modeldb%clock, ldump_prep)
         ! Create a coupling external field
         call coupler_exchange_2d%initialise(field_ptr, local_index)
         call coupler_exchange_2d%set_time(modeldb%clock)
         if( coupler_exchange_2d%is_coupling_time() ) then
           ! Process the accumulations to make the fields that will be coupled
           call process_send_fields_2d(field_ptr, &
-                                      modeldb,   &
-                                      ldump_prep)
+                                      modeldb)
           ! Call through to coupler_send_2d in coupler_exchange_2d_mod
           call coupler_exchange_2d%copy_from_lfric(ierror)
         else
@@ -472,9 +472,8 @@ module coupler_mod
       select type(field)
       type is (field_type)
         field_ptr => field
-        call process_send_fields_2d(field_ptr,&
-                                    modeldb,  &
-                                    ldump_prep)
+        call accumulate_send_fields_2d(field_ptr, depository, acc_step, &
+                                       modeldb%clock, ldump_prep)
         ! Write out the depository version of the field
         name = trim(adjustl(field%get_name()))
         call depository%get_field(trim(name), dep_fld)

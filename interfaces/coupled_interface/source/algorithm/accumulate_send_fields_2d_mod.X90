@@ -46,13 +46,17 @@ module accumulate_send_fields_2d_mod
   !> @brief Accumulates data into coupling fields
   !> @param[in, out] fld coupling field
   !> @param[in] depository field collection - all fields
+  !> @param[in] acc_step The number of accumulation steps
   !> @param[in] clock
-  subroutine accumulate_send_fields_2d(fld, depository, clock)
+  subroutine accumulate_send_fields_2d(fld, depository, acc_step, clock, &
+                                       ldump_prep)
 
     implicit none
     type( field_type ), pointer, intent(inout)   :: fld
     type( field_collection_type ), intent(in)    :: depository
+    real(r_def), pointer,          intent(in)    :: acc_step
     class(clock_type), intent(in)                :: clock
+    logical,                     intent(in)      :: ldump_prep
     ! Local variables
     type(mesh_type), pointer                     :: mesh
     type(function_space_type), pointer           :: cpl_fs
@@ -75,6 +79,9 @@ module accumulate_send_fields_2d_mod
     type( field_type )                           :: cpl_field3_si
 
     character(str_def)                           :: fld_name
+
+    ! Reciprocal of number of accumulated time steps
+    real(r_def)                                  :: r_acc_step
 
     call depository%get_field("sea_ice_frac_previous",sea_ice_frac_previous_ptr)
     call depository%get_field("sea_frac_previous",sea_frac_previous_ptr)
@@ -341,6 +348,27 @@ module accumulate_send_fields_2d_mod
       end select
 
     endif
+
+      ! If this is the last accumulation before the end of the run, then
+      ! there will be no coupling exchange with these values. They must be
+      ! preserved in the restart dump in the exact form in which they will be
+      ! used on the first coupling exchange of any future cycle or new run which starts
+      ! from that dump. We can NOT simply allow the accumulated values to
+      ! be stored because:
+      ! a) any subsequent run using the dump would have to be clairvoyant
+      !    enough to know the coupling frequency and timestep used in the
+      !    run which generated a given dump
+      ! b) any run wishing to use the dump would be constrained to use
+      !    the same timestep and coupling frequency as the run which generated the dump
+      ! c) it would be impossible to alter timestep or coupling frequencies when starting
+      !    from an existing dump without wrecking the values used for coupling.
+
+      if (ldump_prep) then
+        ! Multiply fields to be saved by the reciprocal of acc_step
+        r_acc_step = 1.0_r_def/acc_step
+        call invoke(inc_a_times_X( r_acc_step, dep_fld ))
+      endif
+
 
   end subroutine accumulate_send_fields_2d
 
