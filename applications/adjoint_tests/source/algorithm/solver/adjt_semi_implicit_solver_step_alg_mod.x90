@@ -296,13 +296,17 @@ contains
     logical(kind=l_def), intent(in) :: first_iteration
 
     ! Inner product test variables
-    real(kind=r_def), parameter :: su_sf = 5.0e-19_r_def
-    real(kind=r_def), parameter :: ru_sf = 1.0e7_r_def
-    real(kind=r_def), parameter :: rt_sf = 1.0e22_r_def
-    real(kind=r_def) :: ip_state(2,4), ip_rhs(2,4), ip_mr(2,nummr+1), inner1, inner2
+    real(kind=r_def) :: state_inner_prod(bundle_size), rhs_inner_prod(bundle_size), &
+                        moist_dyn_gas_law_inner_prod, mr_inner_prod(nummr)
+    real(kind=r_def) :: state_sf(bundle_size), rhs_sf(bundle_size), &
+                        moist_dyn_gas_law_sf, mr_sf(nummr)
+    real(kind=r_def) :: state_state_inp_inner_prod(bundle_size), rhs_rhs_inp_inner_prod(bundle_size), &
+                        moist_dyn_gas_law_moist_dyn_gas_law_inp_inner_prod, mr_mr_inp_inner_prod(nummr)
+    real(kind=r_def) :: inner1, inner2
     real(kind=r_def), parameter :: overall_tolerance = 1000.0_r_def
     real(kind=r_def) :: machine_tol, machine_tol_r_solver
     real(kind=r_def) :: relative_diff, relative_diff_r_solver
+    real(kind=r_def), parameter :: eps = 1e-30_r_def
 
     integer(kind=i_def) :: i
 
@@ -317,37 +321,88 @@ contains
     ! Compute <Mx,Mx>
     ! --------------------------------------------------------------------------
 
+    call invoke( name="adjt_siss_10",                                       &
+                 X_innerproduct_X( state_inner_prod(igh_u), state(igh_u) ), &
+                 X_innerproduct_X( state_inner_prod(igh_t), state(igh_t) ), &
+                 X_innerproduct_X( state_inner_prod(igh_d), state(igh_d) ), &
+                 X_innerproduct_X( state_inner_prod(igh_p), state(igh_p) ), &
+                 X_innerproduct_X( rhs_inner_prod(igh_u), rhs(igh_u) ),     &
+                 X_innerproduct_X( rhs_inner_prod(igh_t), rhs(igh_t) ),     &
+                 X_innerproduct_X( rhs_inner_prod(igh_d), rhs(igh_d) ),     &
+                 X_innerproduct_X( rhs_inner_prod(igh_p), rhs(igh_p) ),     &
+                 X_innerproduct_X( moist_dyn_gas_law_inner_prod, moist_dyn_gas_law ) )
     do i = 1, nummr
-      call invoke( name="adjt_siss_10", &
-                   X_innerproduct_X( ip_mr(1,i), mr(i) ) )
+      call invoke( name="adjt_siss_11", &
+                   X_innerproduct_X( mr_inner_prod(i), mr(i) ) )
     end do
 
-    call invoke( name="adjt_siss_11",                                     &
-                 X_innerproduct_X( ip_mr(1,nummr+1), moist_dyn_gas_law ), &
-                 X_innerproduct_X( ip_state(1,1), state(igh_u) ),         &
-                 X_innerproduct_X( ip_state(1,2), state(igh_t) ),         &
-                 X_innerproduct_X( ip_state(1,3), state(igh_d) ),         &
-                 X_innerproduct_X( ip_state(1,4), state(igh_p) ),         &
-                 X_innerproduct_X( ip_rhs(1,1), rhs(igh_u) ),             &
-                 X_innerproduct_X( ip_rhs(1,2), rhs(igh_t) ),             &
-                 X_innerproduct_X( ip_rhs(1,3), rhs(igh_d) ),             &
-                 X_innerproduct_X( ip_rhs(1,4), rhs(igh_p) ),             &
-
-    ! Scaling factors
-                 inc_a_times_x( su_sf, state(igh_u) ),                    &
-                 inc_a_times_x( ru_sf, rhs(igh_u) ),                      &
-                 inc_a_times_x( rt_sf, rhs(igh_t) ) )
-    ip_state(1,1) = ip_state(1, 1) * su_sf
-    ip_rhs(1,1) = ip_rhs(1, 1) * ru_sf
-    ip_rhs(1,2) = ip_rhs(1, 2) * rt_sf
-
-    inner1 = sum(ip_state(1,:)) + sum(ip_rhs(1,:)) + sum(ip_mr(1,:))
-
-    ! For checking scaling factors
-    write( log_scratch_space, * ) &
-      'adjt_semi_implicit_solver_step_alg: first_iteration, state(u,t,d,p), rhs(u,t,d,p), mr, ip1=', &
-      first_iteration, ip_state(1,:), ip_rhs(1,:), ip_mr(1,:)
+    write(log_scratch_space, *) "adjt_semi_implicit_solver_step (first_iteration =", first_iteration, ") inner products:"
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+    write(log_scratch_space, *) "state(igh_u) inner product = ", state_inner_prod(igh_u)
+    call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+    write(log_scratch_space, *) "state(igh_t) inner product = ", state_inner_prod(igh_t)
+    call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+    write(log_scratch_space, *) "state(igh_d) inner product = ", state_inner_prod(igh_d)
+    call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+    write(log_scratch_space, *) "state(igh_p) inner product = ", state_inner_prod(igh_p)
+    call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+    write(log_scratch_space, *) "rhs(igh_u) inner product = ", rhs_inner_prod(igh_u)
+    call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+    write(log_scratch_space, *) "rhs(igh_t) inner product = ", rhs_inner_prod(igh_t)
+    call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+    write(log_scratch_space, *) "rhs(igh_d) inner product = ", rhs_inner_prod(igh_d)
+    call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+    write(log_scratch_space, *) "rhs(igh_p) inner product = ", rhs_inner_prod(igh_p)
+    call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+    write(log_scratch_space, *) "moist_dyn_gas_law inner product = ", moist_dyn_gas_law_inner_prod
+    call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+    do i = 1, nummr
+      write(log_scratch_space, *) "mr(", i, ") inner product = ", mr_inner_prod(i)
+      call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+    end do
+
+    ! Scaling factors are scaled up a bit to avoid numerical issues
+    state_sf(igh_u) = 1.0E4_r_def / (state_inner_prod(igh_u) + eps)
+    state_sf(igh_t) = 1.0E4_r_def / (state_inner_prod(igh_t) + eps)
+    state_sf(igh_d) = 1.0E4_r_def / (state_inner_prod(igh_d) + eps)
+    state_sf(igh_p) = 1.0E4_r_def / (state_inner_prod(igh_p) + eps)
+    rhs_sf(igh_u) = 1.0E4_r_def / (rhs_inner_prod(igh_u) + eps)
+    rhs_sf(igh_t) = 1.0E4_r_def / (rhs_inner_prod(igh_t) + eps)
+    rhs_sf(igh_d) = 1.0E4_r_def / (rhs_inner_prod(igh_d) + eps)
+    rhs_sf(igh_p) = 1.0E4_r_def / (rhs_inner_prod(igh_p) + eps)
+    moist_dyn_gas_law_sf = 1.0E4_r_def / (moist_dyn_gas_law_inner_prod + eps)
+    do i = 1, nummr
+      mr_sf(i) = 1.0E4_r_def / (mr_inner_prod(i) + eps)
+    end do
+
+    inner1 = 0.0_r_def
+    inner1 = inner1 + state_inner_prod(igh_u) * state_sf(igh_u)
+    inner1 = inner1 + state_inner_prod(igh_t) * state_sf(igh_t)
+    inner1 = inner1 + state_inner_prod(igh_d) * state_sf(igh_d)
+    inner1 = inner1 + state_inner_prod(igh_p) * state_sf(igh_p)
+    inner1 = inner1 + rhs_inner_prod(igh_u) * rhs_sf(igh_u)
+    inner1 = inner1 + rhs_inner_prod(igh_t) * rhs_sf(igh_t)
+    inner1 = inner1 + rhs_inner_prod(igh_d) * rhs_sf(igh_d)
+    inner1 = inner1 + rhs_inner_prod(igh_p) * rhs_sf(igh_p)
+    inner1 = inner1 + moist_dyn_gas_law_inner_prod * moist_dyn_gas_law_sf
+    do i = 1, nummr
+      inner1 = inner1 + mr_inner_prod(i) * mr_sf(i)
+    end do
+
+    call invoke( name="adjt_siss_12",                                      &
+                 inc_a_times_X( state_sf(igh_u), state(igh_u) ),           &
+                 inc_a_times_X( state_sf(igh_t), state(igh_t) ),           &
+                 inc_a_times_X( state_sf(igh_d), state(igh_d) ),           &
+                 inc_a_times_X( state_sf(igh_p), state(igh_p) ),           &
+                 inc_a_times_X( rhs_sf(igh_u), rhs(igh_u) ),               &
+                 inc_a_times_X( rhs_sf(igh_t), rhs(igh_t) ),               &
+                 inc_a_times_X( rhs_sf(igh_d), rhs(igh_d) ),               &
+                 inc_a_times_X( rhs_sf(igh_p), rhs(igh_p) ),               &
+                 inc_a_times_X( moist_dyn_gas_law_sf, moist_dyn_gas_law ) )
+    do i = 1, nummr
+      call invoke( name="adjt_siss_13", &
+                   inc_a_times_X( mr_sf(i), mr(i) ) )
+    end do
 
     ! --------------------------------------------------------------------------
     ! Adjoint code
@@ -360,23 +415,34 @@ contains
     ! Compute <AMx,x>
     ! --------------------------------------------------------------------------
 
+    call invoke( name="adjt_siss_14",                                                                  &
+                 x_innerproduct_y( state_state_inp_inner_prod(igh_u), state_in(igh_u), state(igh_u) ), &
+                 x_innerproduct_y( state_state_inp_inner_prod(igh_t), state_in(igh_t), state(igh_t) ), &
+                 x_innerproduct_y( state_state_inp_inner_prod(igh_d), state_in(igh_d), state(igh_d) ), &
+                 x_innerproduct_y( state_state_inp_inner_prod(igh_p), state_in(igh_p), state(igh_p) ), &
+                 x_innerproduct_y( rhs_rhs_inp_inner_prod(igh_u), rhs_in(igh_u), rhs(igh_u) ),         &
+                 x_innerproduct_y( rhs_rhs_inp_inner_prod(igh_t), rhs_in(igh_t), rhs(igh_t) ),         &
+                 x_innerproduct_y( rhs_rhs_inp_inner_prod(igh_d), rhs_in(igh_d), rhs(igh_d) ),         &
+                 x_innerproduct_y( rhs_rhs_inp_inner_prod(igh_p), rhs_in(igh_p), rhs(igh_p) ),         &
+                 x_innerproduct_y( moist_dyn_gas_law_moist_dyn_gas_law_inp_inner_prod, moist_dyn_gas_law_in, moist_dyn_gas_law ) )
     do i = 1, nummr
-      call invoke( name="adjt_siss_12", &
-                   X_innerproduct_y( ip_mr(2,i), mr_in(i), mr(i) ) )
+      call invoke( name="adjt_siss_15", &
+                   x_innerproduct_y( mr_mr_inp_inner_prod(i), mr_in(i), mr(i) ) )
     end do
 
-    call invoke( name="adjt_siss_13",                                                           &
-                 X_innerproduct_y( ip_mr(2,nummr+1), moist_dyn_gas_law_in, moist_dyn_gas_law ), &
-                 X_innerproduct_y( ip_state(2,1), state_in(igh_u), state(igh_u) ),              &
-                 X_innerproduct_y( ip_state(2,2), state_in(igh_t), state(igh_t) ),              &
-                 X_innerproduct_y( ip_state(2,3), state_in(igh_d), state(igh_d) ),              &
-                 X_innerproduct_y( ip_state(2,4), state_in(igh_p), state(igh_p) ),              &
-                 X_innerproduct_y( ip_rhs(2,1), rhs_in(igh_u), rhs(igh_u) ),                    &
-                 X_innerproduct_y( ip_rhs(2,2), rhs_in(igh_t), rhs(igh_t) ),                    &
-                 X_innerproduct_y( ip_rhs(2,3), rhs_in(igh_d), rhs(igh_d) ),                    &
-                 X_innerproduct_y( ip_rhs(2,4), rhs_in(igh_p), rhs(igh_p) ) )
-
-    inner2 = sum(ip_state(2,:)) + sum(ip_rhs(2,:)) + sum(ip_mr(2,:))
+    inner2 = 0.0_r_def
+    inner2 = inner2 + state_state_inp_inner_prod(igh_u)
+    inner2 = inner2 + state_state_inp_inner_prod(igh_t)
+    inner2 = inner2 + state_state_inp_inner_prod(igh_d)
+    inner2 = inner2 + state_state_inp_inner_prod(igh_p)
+    inner2 = inner2 + rhs_rhs_inp_inner_prod(igh_u)
+    inner2 = inner2 + rhs_rhs_inp_inner_prod(igh_t)
+    inner2 = inner2 + rhs_rhs_inp_inner_prod(igh_d)
+    inner2 = inner2 + rhs_rhs_inp_inner_prod(igh_p)
+    inner2 = inner2 + moist_dyn_gas_law_moist_dyn_gas_law_inp_inner_prod
+    do i = 1, nummr
+      inner2 = inner2 + mr_mr_inp_inner_prod(i)
+    end do
 
     ! Test the inner-product values for equality
     machine_tol = spacing( max( abs( inner1 ), abs( inner2 ) ) )

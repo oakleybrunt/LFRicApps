@@ -83,6 +83,10 @@ module atlt_rhs_alg_mod
     real(kind=r_def)    :: state_inner_prod(bundle_size)
     real(kind=r_def)    :: moist_dyn_inner_prod(num_moist_factors)
     real(kind=r_def)    :: rhs_inner_prod(bundle_size)
+    real(kind=r_def)    :: base_state_sf(bundle_size)
+    real(kind=r_def)    :: state_sf(bundle_size)
+    real(kind=r_def)    :: moist_dyn_sf(num_moist_factors)
+    real(kind=r_def)    :: rhs_sf(bundle_size)
     real(kind=r_def)    :: inner2
     real(kind=r_def)    :: base_state_base_state_input_inner_prod(bundle_size)
     real(kind=r_def)    :: state_state_input_inner_prod(bundle_size)
@@ -93,12 +97,10 @@ module atlt_rhs_alg_mod
     integer(kind=i_def) :: moist_idx
 
     ! Test parameters and variables
-    real(kind=r_def), parameter :: rhs_u_sf = 1.0E-25_r_def
-    real(kind=r_def), parameter :: rhs_t_sf = 1.0E-21_r_def
-    real(kind=r_def), parameter :: rhs_p_sf = 1.0E-31_r_def
     real(kind=r_def), parameter :: overall_tolerance = 1500.0_r_def
     real(kind=r_def) :: machine_tol
     real(kind=r_def) :: relative_diff
+    real(kind=r_def), parameter :: eps = 1e-30_r_def
 
     ! Misc
     real(kind=r_def)    :: dt
@@ -225,18 +227,6 @@ module atlt_rhs_alg_mod
       call invoke( x_innerproduct_x( moist_dyn_inner_prod(moist_idx), moist_dyn(moist_idx) ) )
     end do
 
-    inner1 = 0.0_r_def
-    inner1 = inner1 + base_state_inner_prod(igh_u)
-    inner1 = inner1 + base_state_inner_prod(igh_t)
-    inner1 = inner1 + base_state_inner_prod(igh_d)
-    inner1 = inner1 + state_inner_prod(igh_u)
-    inner1 = inner1 + state_inner_prod(igh_t)
-    inner1 = inner1 + state_inner_prod(igh_d)
-    inner1 = inner1 + state_inner_prod(igh_p)
-    inner1 = inner1 + rhs_inner_prod(igh_u)*rhs_u_sf
-    inner1 = inner1 + rhs_inner_prod(igh_t)*rhs_t_sf
-    inner1 = inner1 + rhs_inner_prod(igh_d)
-    inner1 = inner1 + rhs_inner_prod(igh_p)*rhs_p_sf
     write(log_scratch_space, *) "atlt_rhs inner products:"
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
     write(log_scratch_space, *) "base_state(igh_u) inner product = ", base_state_inner_prod(igh_u)
@@ -253,23 +243,65 @@ module atlt_rhs_alg_mod
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
     write(log_scratch_space, *) "state(igh_p) inner product = ", state_inner_prod(igh_p)
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
-    write(log_scratch_space, *) "rhs(igh_u) inner product = ", rhs_inner_prod(igh_u)*rhs_u_sf
+    write(log_scratch_space, *) "rhs(igh_u) inner product = ", rhs_inner_prod(igh_u)
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
-    write(log_scratch_space, *) "rhs(igh_t) inner product = ", rhs_inner_prod(igh_t)*rhs_t_sf
+    write(log_scratch_space, *) "rhs(igh_t) inner product = ", rhs_inner_prod(igh_t)
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
     write(log_scratch_space, *) "rhs(igh_d) inner product = ", rhs_inner_prod(igh_d)
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
-    write(log_scratch_space, *) "rhs(igh_p) inner product = ", rhs_inner_prod(igh_p)*rhs_p_sf
+    write(log_scratch_space, *) "rhs(igh_p) inner product = ", rhs_inner_prod(igh_p)
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
-
     do moist_idx = 1, num_moist_factors
-      inner1 = inner1 + moist_dyn_inner_prod(moist_idx)
+      write(log_scratch_space, *) "moist_dyn(", moist_idx, ") inner product = ", moist_dyn_inner_prod(moist_idx)
+      call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+    end do
+
+    base_state_sf(igh_u) = 1.0_r_def / (base_state_inner_prod(igh_u) + eps)
+    base_state_sf(igh_t) = 1.0_r_def / (base_state_inner_prod(igh_t) + eps)
+    base_state_sf(igh_d) = 1.0_r_def / (base_state_inner_prod(igh_d) + eps)
+    state_sf(igh_u) = 1.0_r_def / (state_inner_prod(igh_u) + eps)
+    state_sf(igh_t) = 1.0_r_def / (state_inner_prod(igh_t) + eps)
+    state_sf(igh_d) = 1.0_r_def / (state_inner_prod(igh_d) + eps)
+    state_sf(igh_p) = 1.0_r_def / (state_inner_prod(igh_p) + eps)
+    rhs_sf(igh_u) = 1.0_r_def / (rhs_inner_prod(igh_u) + eps)
+    rhs_sf(igh_t) = 1.0_r_def / (rhs_inner_prod(igh_t) + eps)
+    rhs_sf(igh_d) = 1.0_r_def / (rhs_inner_prod(igh_d) + eps)
+    rhs_sf(igh_p) = 1.0_r_def / (rhs_inner_prod(igh_p) + eps)
+    do moist_idx = 1, num_moist_factors
+      moist_dyn_sf(moist_idx) = 1.0_r_def / (moist_dyn_inner_prod(moist_idx) + eps)
+    end do
+
+    inner1 = 0.0_r_def
+    inner1 = inner1 + base_state_inner_prod(igh_u) * base_state_sf(igh_u)
+    inner1 = inner1 + base_state_inner_prod(igh_t) * base_state_sf(igh_t)
+    inner1 = inner1 + base_state_inner_prod(igh_d) * base_state_sf(igh_d)
+    inner1 = inner1 + state_inner_prod(igh_u) * state_sf(igh_u)
+    inner1 = inner1 + state_inner_prod(igh_t) * state_sf(igh_t)
+    inner1 = inner1 + state_inner_prod(igh_d) * state_sf(igh_d)
+    inner1 = inner1 + state_inner_prod(igh_p) * state_sf(igh_p)
+    inner1 = inner1 + rhs_inner_prod(igh_u) * rhs_sf(igh_u)
+    inner1 = inner1 + rhs_inner_prod(igh_t) * rhs_sf(igh_t)
+    inner1 = inner1 + rhs_inner_prod(igh_d) * rhs_sf(igh_d)
+    inner1 = inner1 + rhs_inner_prod(igh_p) * rhs_sf(igh_p)
+    do moist_idx = 1, num_moist_factors
+      inner1 = inner1 + moist_dyn_inner_prod(moist_idx) * moist_dyn_sf(moist_idx)
     end do
 
     ! Scaling fields
-    call invoke( inc_a_times_X( rhs_u_sf, rhs(igh_u) ),        &
-                 inc_a_times_X( rhs_t_sf, rhs(igh_t) ),        &
-                 inc_a_times_X( rhs_p_sf, rhs(igh_p) ) )
+    call invoke( inc_a_times_X( base_state_sf(igh_u), base_state(igh_u) ), &
+                 inc_a_times_X( base_state_sf(igh_t), base_state(igh_t) ), &
+                 inc_a_times_X( base_state_sf(igh_d), base_state(igh_d) ), &
+                 inc_a_times_X( state_sf(igh_u), state(igh_u) ),           &
+                 inc_a_times_X( state_sf(igh_t), state(igh_t) ),           &
+                 inc_a_times_X( state_sf(igh_d), state(igh_d) ),           &
+                 inc_a_times_X( state_sf(igh_p), state(igh_p) ),           &
+                 inc_a_times_X( rhs_sf(igh_u), rhs(igh_u) ),               &
+                 inc_a_times_X( rhs_sf(igh_t), rhs(igh_t) ),               &
+                 inc_a_times_X( rhs_sf(igh_d), rhs(igh_d) ),               &
+                 inc_a_times_X( rhs_sf(igh_p), rhs(igh_p) ) )
+    do moist_idx = 1, num_moist_factors
+      call invoke(inc_a_times_X( moist_dyn_sf(moist_idx), moist_dyn(moist_idx) ))
+    end do
 
     ! Adjoint alg call and inner products
     base_state_base_state_input_inner_prod(:) = 0.0_r_def

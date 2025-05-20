@@ -62,8 +62,9 @@ module atlt_derive_exner_from_eos_alg_mod
     ! Inner products
     real(kind=r_def)            :: inner1
     real(kind=r_def)            :: state_inner_prod(bundle_size)
-    real(kind=r_def), parameter :: state_p_sf = 1.0E-20_r_def
     real(kind=r_def)            :: moist_dyn_inner_prod
+    real(kind=r_def)            :: state_sf(bundle_size)
+    real(kind=r_def)            :: moist_dyn_sf
     real(kind=r_def)            :: inner2
     real(kind=r_def)            :: state_state_input_inner_prod(bundle_size)
     real(kind=r_def)            :: moist_dyn_moist_dyn_input_inner_prod
@@ -72,6 +73,7 @@ module atlt_derive_exner_from_eos_alg_mod
     real(kind=r_def), parameter :: overall_tolerance = 1500.0_r_def
     real(kind=r_def)            :: machine_tol
     real(kind=r_def)            :: relative_diff
+    real(kind=r_def), parameter :: eps = 1e-30_r_def
 
     ! Initialising fields
     vector_space_wtheta_ptr => function_space_collection % get_fs( mesh, element_order_h, element_order_v, Wtheta )
@@ -117,23 +119,32 @@ module atlt_derive_exner_from_eos_alg_mod
                  x_innerproduct_x( state_inner_prod(igh_p), state(igh_p) ),           &
                  x_innerproduct_x( moist_dyn_inner_prod, moist_dyn ) )
 
-    inner1 = 0.0_r_def
-    inner1 = inner1 + state_inner_prod(igh_t)
-    inner1 = inner1 + state_inner_prod(igh_d)
-    inner1 = inner1 + state_inner_prod(igh_p)*state_p_sf
-    inner1 = inner1 + moist_dyn_inner_prod
     write(log_scratch_space, *) "atlt_derive_exner_from_eos inner products:"
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
     write(log_scratch_space, *) "state(igh_t) inner product = ", state_inner_prod(igh_t)
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
     write(log_scratch_space, *) "state(igh_d) inner product = ", state_inner_prod(igh_d)
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
-    write(log_scratch_space, *) "state(igh_p) inner product = ", state_inner_prod(igh_p)*state_p_sf
+    write(log_scratch_space, *) "state(igh_p) inner product = ", state_inner_prod(igh_p)
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
     write(log_scratch_space, *) "moist_dyn inner product = ", moist_dyn_inner_prod
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
 
-    call invoke( inc_a_times_X( state_p_sf, state(igh_p) ) )
+    state_sf(igh_t) = 1.0_r_def / (state_inner_prod(igh_t) + eps)
+    state_sf(igh_d) = 1.0_r_def / (state_inner_prod(igh_d) + eps)
+    state_sf(igh_p) = 1.0_r_def / (state_inner_prod(igh_p) + eps)
+    moist_dyn_sf = 1.0_r_def / (moist_dyn_inner_prod + eps)
+
+    inner1 = 0.0_r_def
+    inner1 = inner1 + state_inner_prod(igh_t) * state_sf(igh_t)
+    inner1 = inner1 + state_inner_prod(igh_d) * state_sf(igh_d)
+    inner1 = inner1 + state_inner_prod(igh_p) * state_sf(igh_p)
+    inner1 = inner1 + moist_dyn_inner_prod * moist_dyn_sf
+
+    call invoke( inc_a_times_X( state_sf(igh_t), state(igh_t) ), &
+                 inc_a_times_X( state_sf(igh_d), state(igh_d) ), &
+                 inc_a_times_X( state_sf(igh_p), state(igh_p) ), &
+                 inc_a_times_X( moist_dyn_sf, moist_dyn ) )
 
     ! Adjoint alg call and inner products
     state_state_input_inner_prod(:) = 0.0_r_def

@@ -116,13 +116,14 @@ contains
 
     ! Inner product test variables
     type(r_solver_field_vector_type) :: vector_x, vector_mx, vector_amx
-    real(kind=r_def), parameter :: p_sf = 1.0e1_r_def
-    real(kind=r_def), parameter :: uv_sf = 1.0e-17_r_def
-    real(kind=r_def), parameter :: w_sf = 1.0e-18_r_def
-    real(kind=r_def) :: ip1(3), ip2(3), inner1, inner2
+    real(kind=r_def) :: p_inner_prod, uv_inner_prod, w_inner_prod
+    real(kind=r_def) :: p_sf, uv_sf, w_sf
+    real(kind=r_def) :: p_p_inp_inner_prod, uv_uv_inp_inner_prod, w_w_inp_inner_prod
+    real(kind=r_def) :: inner1, inner2
     real(kind=r_def), parameter :: overall_tolerance = 1000.0_r_def
     real(kind=r_def) :: machine_tol, machine_tol_r_solver
     real(kind=r_def) :: relative_diff, relative_diff_r_solver
+    real(kind=r_def), parameter :: eps = 1e-30_r_def
 
     if (subroutine_timers) call timer('adjt_mixed_schur_preconditioner_alg')
 
@@ -236,23 +237,31 @@ contains
     ! Compute <Mx,Mx>
     ! --------------------------------------------------------------------------
 
-    call invoke( X_innerproduct_X( ip1(1), vector_mx%vector(isol_p) ),  &
-                 X_innerproduct_X( ip1(2), vector_mx%vector(isol_uv) ), &
-                 X_innerproduct_X( ip1(3), vector_mx%vector(isol_w) ),  &
+    call invoke( X_innerproduct_X( p_inner_prod, vector_mx%vector(isol_p) ),   &
+                 X_innerproduct_X( uv_inner_prod, vector_mx%vector(isol_uv) ), &
+                 X_innerproduct_X( w_inner_prod, vector_mx%vector(isol_w) ) )
 
-    ! Scaling factors
-                 inc_a_times_X ( p_sf, vector_mx%vector(isol_p) ),     &
-                 inc_a_times_X ( uv_sf, vector_mx%vector(isol_uv) ),    &
-                 inc_a_times_X ( w_sf, vector_mx%vector(isol_w) ) )
-    ip1(1) = ip1(1) * p_sf
-    ip1(2) = ip1(2) * uv_sf
-    ip1(3) = ip1(3) * w_sf
-
-    inner1 = sum(ip1)
-
-    ! For checking scaling factors
-    write( log_scratch_space, * ) 'adjt_mixed_schur_preconditioner inner products (ip1(p,uv,w))=', ip1(:)
+    write( log_scratch_space, * ) "adjt_mixed_schur_preconditioner inner products:"
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+    write(log_scratch_space, *) "p inner product = ", p_inner_prod
+    call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+    write(log_scratch_space, *) "uv inner product = ", uv_inner_prod
+    call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+    write(log_scratch_space, *) "w inner product = ", w_inner_prod
+    call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+
+    p_sf = 1.0_r_def / (p_inner_prod + eps)
+    uv_sf = 1.0_r_def / (uv_inner_prod + eps)
+    w_sf = 1.0_r_def / (w_inner_prod + eps)
+
+    inner1 = 0.0_r_def
+    inner1 = inner1 + p_inner_prod * p_sf
+    inner1 = inner1 + uv_inner_prod * uv_sf
+    inner1 = inner1 + w_inner_prod * w_sf
+
+    call invoke( inc_a_times_X( p_sf, vector_mx%vector(isol_p) ),   &
+                 inc_a_times_X( uv_sf, vector_mx%vector(isol_uv) ), &
+                 inc_a_times_X( w_sf, vector_mx%vector(isol_w) ) )
 
     ! --------------------------------------------------------------------------
     ! Adjoint code
@@ -264,11 +273,14 @@ contains
     ! Compute <AMx,x>
     ! --------------------------------------------------------------------------
 
-    call invoke( X_innerproduct_Y( ip2(1), vector_amx%vector(isol_p), vector_x%vector(isol_p) ),   &
-                 X_innerproduct_Y( ip2(2), vector_amx%vector(isol_uv), vector_x%vector(isol_uv) ), &
-                 X_innerproduct_Y( ip2(3), vector_amx%vector(isol_w), vector_x%vector(isol_w) ) )
+    call invoke( X_innerproduct_Y( p_p_inp_inner_prod, vector_amx%vector(isol_p), vector_x%vector(isol_p) ),     &
+                 X_innerproduct_Y( uv_uv_inp_inner_prod, vector_amx%vector(isol_uv), vector_x%vector(isol_uv) ), &
+                 X_innerproduct_Y( w_w_inp_inner_prod, vector_amx%vector(isol_w), vector_x%vector(isol_w) ) )
 
-    inner2 = sum(ip2)
+    inner2 = 0.0_r_def
+    inner2 = inner2 + p_p_inp_inner_prod
+    inner2 = inner2 + uv_uv_inp_inner_prod
+    inner2 = inner2 + w_w_inp_inner_prod
 
     ! Test the inner-product values for equality
     machine_tol = spacing( max( abs( inner1 ), abs( inner2 ) ) )

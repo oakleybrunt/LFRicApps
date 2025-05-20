@@ -101,13 +101,17 @@ contains
     type(atl_si_timestep_type)         :: atl_si_timestep
 
     ! Inner product test variables
-    real(kind=r_def) :: ip1(bundle_size), ip2(bundle_size), ip_mr1(num_moist_factors+nummr), ip_mr2(num_moist_factors+nummr)
+    real(kind=r_def) :: u_inner_prod, rho_inner_prod, theta_inner_prod, exner_inner_prod, &
+                        mr_inner_prod(nummr), moist_dyn_inner_prod(num_moist_factors)
+    real(kind=r_def) :: u_sf, rho_sf, theta_sf, exner_sf, &
+                        mr_sf(nummr), moist_dyn_sf(num_moist_factors)
+    real(kind=r_def) :: u_u_inp_inner_prod, rho_rho_inp_inner_prod, theta_theta_inp_inner_prod, exner_exner_inp_inner_prod, &
+                        mr_mr_inp_inner_prod(nummr), moist_dyn_moist_dyn_inp_inner_prod(num_moist_factors)
     real(kind=r_def) :: inner1, inner2
-    real(kind=r_def), parameter :: u_sf = 1.0e-21_r_def
-    real(kind=r_def), parameter :: t_sf = 1.0e-2_r_def
     real(kind=r_def), parameter :: overall_tolerance = 1000.0_r_def
     real(kind=r_def) :: machine_tol, machine_tol_r_solver
     real(kind=r_def) :: relative_diff, relative_diff_r_solver
+    real(kind=r_def), parameter :: eps = 1e-30_r_def
 
     if (subroutine_timers) call timer('atlt_si_timestep_alg')
 
@@ -234,33 +238,70 @@ contains
     ! Compute <Mx,Mx>
     ! --------------------------------------------------------------------------
 
+    call invoke( X_innerproduct_X( u_inner_prod, u ),         &
+                 X_innerproduct_X( rho_inner_prod, rho ),     &
+                 X_innerproduct_X( theta_inner_prod, theta ), &
+                 X_innerproduct_X( exner_inner_prod, exner ) )
     do i = 1, nummr
-      call invoke(X_innerproduct_X( ip_mr1(i), mr(i) ))
+      call invoke( X_innerproduct_X( mr_inner_prod(i), mr(i) ) )
     end do
-
     do i = 1, num_moist_factors
-      call invoke(x_innerproduct_x( ip_mr1(nummr+i), moist_dyn(i) ))
+      call invoke( X_innerproduct_X( moist_dyn_inner_prod(i), moist_dyn(i) ) )
     end do
 
-    call invoke( x_innerproduct_x( ip1(igh_u), u ),     &
-                 x_innerproduct_x( ip1(igh_t), theta ), &
-                 x_innerproduct_x( ip1(igh_d), rho ),   &
-                 x_innerproduct_x( ip1(igh_p), exner ), &
-
-    ! Scaling factors
-                 inc_a_times_x( u_sf, u ),              &
-                 inc_a_times_x( t_sf, theta ) )
-    ip1(igh_u) = ip1(igh_u) * u_sf
-    ip1(igh_t) = ip1(igh_t) * t_sf
-
-    inner1 = sum(ip1) + sum(ip_mr1(:))
-
-    ! For checking scaling factors
-    write(log_scratch_space, *) 'atlt_si_timestep_alg: ip1(u,t,d,p)=', ip1
+    write(log_scratch_space, *) "atlt_si_timestep inner products:"
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
-    write( log_scratch_space, *) 'atlt_si_timestep_alg: ip1(mr, moist_dyn)=', ip_mr1(:)
+    write(log_scratch_space, *) "u inner product = ", u_inner_prod
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+    write(log_scratch_space, *) "rho inner product = ", rho_inner_prod
+    call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+    write(log_scratch_space, *) "theta inner product = ", theta_inner_prod
+    call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+    write(log_scratch_space, *) "exner inner product = ", exner_inner_prod
+    call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+    do i = 1, nummr
+      write(log_scratch_space, *) "mr(", i, ") inner product = ", mr_inner_prod(i)
+      call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+    end do
+    do i = 1, num_moist_factors
+      write(log_scratch_space, *) "moist_dyn(", i, ") inner product = ", moist_dyn_inner_prod(i)
+      call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+    end do
 
+    ! Scaling factors are scaled up a bit to avoid numerical issues
+    u_sf = 1.0E4_r_def / (u_inner_prod + eps)
+    rho_sf = 1.0E4_r_def / (rho_inner_prod + eps)
+    theta_sf = 1.0E4_r_def / (theta_inner_prod + eps)
+    exner_sf = 1.0E4_r_def / (exner_inner_prod + eps)
+    do i = 1, nummr
+      mr_sf(i) = 1.0E4_r_def / (mr_inner_prod(i) + eps)
+    end do
+    do i = 1, num_moist_factors
+      moist_dyn_sf(i) = 1.0E4_r_def / (moist_dyn_inner_prod(i) + eps)
+    end do
+
+    inner1 = 0.0_r_def
+    inner1 = inner1 + u_inner_prod * u_sf
+    inner1 = inner1 + rho_inner_prod * rho_sf
+    inner1 = inner1 + theta_inner_prod * theta_sf
+    inner1 = inner1 + exner_inner_prod * exner_sf
+    do i = 1, nummr
+      inner1 = inner1 + mr_inner_prod(i) * mr_sf(i)
+    end do
+    do i = 1, num_moist_factors
+      inner1 = inner1 + moist_dyn_inner_prod(i) * moist_dyn_sf(i)
+    end do
+
+    call invoke( inc_a_times_X( u_sf, u ),         &
+                 inc_a_times_X( rho_sf, rho ),     &
+                 inc_a_times_X( theta_sf, theta ), &
+                 inc_a_times_X( exner_sf, exner ) )
+    do i = 1, nummr
+      call invoke( inc_a_times_X( mr_sf(i), mr(i) ) )
+    end do
+    do i = 1, num_moist_factors
+      call invoke( inc_a_times_X( moist_dyn_sf(i), moist_dyn(i) ) )
+    end do
 
     ! --------------------------------------------------------------------------
     ! Adjoint code
@@ -277,20 +318,28 @@ contains
     ! Compute <AMx,x>
     ! --------------------------------------------------------------------------
 
-    call invoke( x_innerproduct_y( ip2(igh_u), u_in, u ),         &
-                 x_innerproduct_y( ip2(igh_t), theta_in, theta ), &
-                 x_innerproduct_y( ip2(igh_d), rho_in, rho ),     &
-                 x_innerproduct_y( ip2(igh_p), exner_in, exner ) )
-
+    call invoke( X_innerproduct_Y( u_u_inp_inner_prod, u_in, u ),                 &
+                 X_innerproduct_Y( rho_rho_inp_inner_prod, rho_in, rho ),         &
+                 X_innerproduct_Y( theta_theta_inp_inner_prod, theta_in, theta ), &
+                 X_innerproduct_Y( exner_exner_inp_inner_prod, exner_in, exner ) )
     do i = 1, nummr
-      call invoke(X_innerproduct_y( ip_mr2(i), mr_input(i), mr(i) ))
+      call invoke( X_innerproduct_Y( mr_mr_inp_inner_prod(i), mr_input(i), mr(i) ) )
     end do
-
     do i = 1, num_moist_factors
-      call invoke(x_innerproduct_y( ip_mr2(nummr+i), moist_dyn(i), moist_dyn_input(i) ))
+      call invoke( X_innerproduct_Y( moist_dyn_moist_dyn_inp_inner_prod(i), moist_dyn_input(i), moist_dyn(i) ) )
     end do
 
-    inner2 = sum(ip2) + sum(ip_mr2(:))
+    inner2 = 0.0_r_def
+    inner2 = inner2 + u_u_inp_inner_prod
+    inner2 = inner2 + rho_rho_inp_inner_prod
+    inner2 = inner2 + theta_theta_inp_inner_prod
+    inner2 = inner2 + exner_exner_inp_inner_prod
+    do i = 1, nummr
+      inner2 = inner2 + mr_mr_inp_inner_prod(i)
+    end do
+    do i = 1, num_moist_factors
+      inner2 = inner2 + moist_dyn_moist_dyn_inp_inner_prod(i)
+    end do
 
     ! Test the inner-product values for equality
     machine_tol = spacing( max( abs( inner1 ), abs( inner2 ) ) )

@@ -59,6 +59,8 @@ module atlt_moist_dyn_factors_alg_mod
     real(kind=r_def) :: inner1
     real(kind=r_def) :: moist_dyn_inner_prod(num_moist_factors)
     real(kind=r_def) :: mr_inner_prod(nummr)
+    real(kind=r_def) :: moist_dyn_sf(num_moist_factors)
+    real(kind=r_def) :: mr_sf(nummr)
     real(kind=r_def) :: inner2
     real(kind=r_def) :: moist_dyn_moist_dyn_input_inner_prod(num_moist_factors)
     real(kind=r_def) :: mr_mr_input_inner_prod(nummr)
@@ -71,6 +73,7 @@ module atlt_moist_dyn_factors_alg_mod
     real(kind=r_def), parameter :: overall_tolerance = 1500.0_r_def
     real(kind=r_def)            :: machine_tol
     real(kind=r_def)            :: relative_diff
+    real(kind=r_def), parameter :: eps = 1e-30_r_def
 
     ! Initialising fields
     vector_space_wtheta_ptr => function_space_collection % get_fs( mesh, element_order_h, element_order_v, Wtheta )
@@ -118,16 +121,20 @@ module atlt_moist_dyn_factors_alg_mod
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
 
     do moist_idx = 1, num_moist_factors
-      inner1 = inner1 + moist_dyn_inner_prod(moist_idx)
       write(log_scratch_space, *) "moist_dyn(idx = ", moist_idx, ") inner product = ", &
                                   moist_dyn_inner_prod(moist_idx)
       call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+      moist_dyn_sf(moist_idx) = 1.0_r_def / (moist_dyn_inner_prod(moist_idx) + eps)
+      inner1 = inner1 + moist_dyn_inner_prod(moist_idx) * moist_dyn_sf(moist_idx)
+      call invoke(inc_a_times_X( moist_dyn_sf(moist_idx), moist_dyn(moist_idx) ))
     end do
 
     do mr_idx = 1, nummr
-      inner1 = inner1 + mr_inner_prod(mr_idx)
       write(log_scratch_space, *) "mr(idx = ", mr_idx, ") inner product = ", mr_inner_prod(mr_idx)
       call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+      mr_sf(mr_idx) = 1.0_r_def / (mr_inner_prod(mr_idx) + eps)
+      inner1 = inner1 + mr_inner_prod(mr_idx) * mr_sf(mr_idx)
+      call invoke(inc_a_times_X( mr_sf(mr_idx), mr(mr_idx) ))
     end do
 
     ! Adjoint alg call and inner products

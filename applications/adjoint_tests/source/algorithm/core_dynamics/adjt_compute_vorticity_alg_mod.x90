@@ -57,8 +57,9 @@ module adjt_compute_vorticity_alg_mod
     ! Inner products
     real(kind=r_def)            :: inner1
     real(kind=r_def)            :: xi_inner_prod
-    real(kind=r_def), parameter :: xi_sf = 1.0E+13_r_def
     real(kind=r_def)            :: u_inner_prod
+    real(kind=r_def)            :: xi_sf
+    real(kind=r_def)            :: u_sf
     real(kind=r_def)            :: inner2
     real(kind=r_def)            :: xi_xi_input_inner_prod
     real(kind=r_def)            :: u_u_input_inner_prod
@@ -67,6 +68,7 @@ module adjt_compute_vorticity_alg_mod
     real(kind=r_def), parameter :: overall_tolerance = 1500.0_r_def
     real(kind=r_def)            :: machine_tol
     real(kind=r_def)            :: relative_diff
+    real(kind=r_def), parameter :: eps = 1e-30_r_def
 
     ! Initialising logicals
     weak_form_u = .false.
@@ -97,18 +99,23 @@ module adjt_compute_vorticity_alg_mod
     call invoke( x_innerproduct_x( xi_inner_prod, xi ), &
                  x_innerproduct_x( u_inner_prod, u ) )
 
-    inner1 = 0.0_r_def
-    inner1 = inner1 + xi_inner_prod*xi_sf
-    inner1 = inner1 + u_inner_prod
     write(log_scratch_space, *) "adjt_compute_vorticity inner products:"
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
-    write(log_scratch_space, *) "xi inner product = ", xi_inner_prod*xi_sf
+    write(log_scratch_space, *) "xi inner product = ", xi_inner_prod
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
     write(log_scratch_space, *) "u inner product = ", u_inner_prod
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
 
+    xi_sf = 1.0_r_def / (xi_inner_prod + eps)
+    u_sf = 1.0_r_def / (u_inner_prod + eps)
+
+    inner1 = 0.0_r_def
+    inner1 = inner1 + xi_inner_prod * xi_sf
+    inner1 = inner1 + u_inner_prod * u_sf
+
     ! Scaling fields
-    call invoke( inc_a_times_X( xi_sf, xi ) )
+    call invoke( inc_a_times_X( xi_sf, xi ), &
+                 inc_a_times_X( u_sf, u ) )
 
     ! Adjoint alg call and inner products
     xi_xi_input_inner_prod = 0.0_r_def

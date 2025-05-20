@@ -67,6 +67,9 @@ module adjt_scaled_matrix_vector_alg_mod
     type(r_solver_operator_type), pointer :: div_star
 
     ! Inner products
+    real(kind=r_def) :: vector_inner_prod
+    real(kind=r_def) :: vector_sf
+    real(kind=r_def) :: vector_vector_inp_inner_prod
     real(kind=r_def) :: inner1
     real(kind=r_def) :: inner2
 
@@ -74,6 +77,7 @@ module adjt_scaled_matrix_vector_alg_mod
     real(kind=r_def)            :: machine_tolerance
     real(kind=r_def)            :: relative_diff
     real(kind=r_def), parameter :: overall_tolerance = 1500.0_r_def
+    real(kind=r_def), parameter :: eps = 1e-30_r_def
 
     ! Setup
 
@@ -117,20 +121,30 @@ module adjt_scaled_matrix_vector_alg_mod
 
     ! <Mx,Mx>
 
-                 x_innerproduct_x( inner1, vector_mx ) )
+                 x_innerproduct_x( vector_inner_prod, vector_mx ) )
 
-    ! Check scaling factors
-
-    write(log_scratch_space, *) "adjt_scaled_matrix_vector_alg inner product = ", inner1
+    write(log_scratch_space, *) "adjt_scaled_matrix_vector inner products:"
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+    write(log_scratch_space, *) "vector inner product = ", vector_inner_prod
+    call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
+
+    vector_sf = 1.0_r_def / (vector_inner_prod + eps)
+
+    inner1 = 0.0_r_def
+    inner1 = inner1 + vector_inner_prod * vector_sf
+
+    call invoke( inc_a_times_X( vector_sf, vector_mx ),                                                        &
 
     ! Adjoint (AMx)
 
-    call invoke( adj_scaled_matrix_vector_kernel_type( vector_mx, vector_amx, div_star, u_normalisation, Hb_lumped_inv ), &
+                 adj_scaled_matrix_vector_kernel_type( vector_mx, vector_amx, div_star, u_normalisation, Hb_lumped_inv ), &
 
     ! <AMx,x>
 
-                 x_innerproduct_y( inner2, vector_amx, vector_x ) )
+                 x_innerproduct_y( vector_vector_inp_inner_prod, vector_amx, vector_x ) )
+
+    inner2 = 0.0_r_def
+    inner2 = inner2 + vector_vector_inp_inner_prod
 
     ! Test the inner-product values for equality, allowing for the precision of the active variables
 

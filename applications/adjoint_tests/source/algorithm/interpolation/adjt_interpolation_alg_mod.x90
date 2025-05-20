@@ -17,6 +17,7 @@ module adjt_interpolation_alg_mod
   use constants_mod,                 only : i_def, r_def
   use log_mod,                       only : log_event,         &
                                             log_level_error,   &
+                                            log_level_debug,   &
                                             log_level_info,    &
                                             log_scratch_space
 
@@ -63,10 +64,11 @@ module adjt_interpolation_alg_mod
     real(kind=r_def)                   :: u3_inner_prod
     real(kind=r_def)                   :: v3_inner_prod
     real(kind=r_def)                   :: wt_inner_prod
+    real(kind=r_def)                   :: u2_sf
+    real(kind=r_def)                   :: u3_sf
+    real(kind=r_def)                   :: v3_sf
+    real(kind=r_def)                   :: wt_sf
     real(kind=r_def)                   :: inner1
-    real(kind=r_def),        parameter :: u_in_w3_sf = 1.0E15_r_def
-    real(kind=r_def),        parameter :: v_in_w3_sf = 1.0E15_r_def
-    real(kind=r_def),        parameter :: w_in_wth_sf = 1.0E16_r_def
     real(kind=r_def)                   :: u2_u2_inp_inner_prod
     real(kind=r_def)                   :: u3_u3_inp_inner_prod
     real(kind=r_def)                   :: v3_v3_inp_inner_prod
@@ -77,6 +79,7 @@ module adjt_interpolation_alg_mod
     real(kind=r_def)                   :: machine_tolerance
     real(kind=r_def)                   :: relative_diff
     real(kind=r_def),        parameter :: overall_tolerance = 1500.0_r_def
+    real(kind=r_def),        parameter :: eps = 1e-30_r_def
 
     vector_space_w2_ptr => function_space_collection % get_fs(mesh, element_order_h, &
                                                               element_order_v, w2)
@@ -111,16 +114,33 @@ module adjt_interpolation_alg_mod
                  x_innerproduct_x(v3_inner_prod, v_in_w3), &
                  x_innerproduct_x(wt_inner_prod, w_in_wth) )
 
+    write(log_scratch_space, *) "adjt_interp_w2_to_w3wth inner products:"
+    call log_event( log_scratch_space, log_level_debug )
+    write(log_scratch_space, *) "u_in_w2 inner product = ", u2_inner_prod
+    call log_event( log_scratch_space, log_level_debug )
+    write(log_scratch_space, *) "u_in_w3 inner product = ", u3_inner_prod
+    call log_event( log_scratch_space, log_level_debug )
+    write(log_scratch_space, *) "v_in_w3 inner product = ", v3_inner_prod
+    call log_event( log_scratch_space, log_level_debug )
+    write(log_scratch_space, *) "w_in_wth inner product = ", wt_inner_prod
+    call log_event( log_scratch_space, log_level_debug )
+
+    u2_sf = 1.0_r_def / (u2_inner_prod + eps)
+    u3_sf = 1.0_r_def / (u3_inner_prod + eps)
+    v3_sf = 1.0_r_def / (v3_inner_prod + eps)
+    wt_sf = 1.0_r_def / (wt_inner_prod + eps)
+
     inner1 = 0.0_r_def
-    inner1 = inner1 + u2_inner_prod
-    inner1 = inner1 + u3_inner_prod*u_in_w3_sf
-    inner1 = inner1 + v3_inner_prod*v_in_w3_sf
-    inner1 = inner1 + wt_inner_prod*w_in_wth_sf
+    inner1 = inner1 + u2_inner_prod * u2_sf
+    inner1 = inner1 + u3_inner_prod * u3_sf
+    inner1 = inner1 + v3_inner_prod * v3_sf
+    inner1 = inner1 + wt_inner_prod * wt_sf
 
     ! Scaling fields
-    call invoke( inc_a_times_X( u_in_w3_sf, u_in_w3 ), &
-                 inc_a_times_X( v_in_w3_sf, v_in_w3 ), &
-                 inc_a_times_X( w_in_wth_sf, w_in_wth ) )
+    call invoke( inc_a_times_X( u2_sf, u_in_w2 ), &
+                 inc_a_times_X( u3_sf, u_in_w3 ), &
+                 inc_a_times_X( v3_sf, v_in_w3 ), &
+                 inc_a_times_X( wt_sf, w_in_wth ) )
 
     u2_u2_inp_inner_prod = 0.0_r_def
     u3_u3_inp_inner_prod = 0.0_r_def
@@ -190,8 +210,11 @@ module adjt_interpolation_alg_mod
     real(kind=r_def)                   :: u3_inner_prod
     real(kind=r_def)                   :: v3_inner_prod
     real(kind=r_def)                   :: wt_inner_prod
+    real(kind=r_def)                   :: u2_sf
+    real(kind=r_def)                   :: u3_sf
+    real(kind=r_def)                   :: v3_sf
+    real(kind=r_def)                   :: wt_sf
     real(kind=r_def)                   :: inner1
-    real(kind=r_def),        parameter :: u_in_w2_sf = 1.0E-15_r_def
     real(kind=r_def)                   :: u2_u2_inp_inner_prod
     real(kind=r_def)                   :: u3_u3_inp_inner_prod
     real(kind=r_def)                   :: v3_v3_inp_inner_prod
@@ -202,6 +225,7 @@ module adjt_interpolation_alg_mod
     real(kind=r_def)                   :: machine_tolerance
     real(kind=r_def)                   :: relative_diff
     real(kind=r_def),        parameter :: overall_tolerance = 1500.0_r_def
+    real(kind=r_def),        parameter :: eps = 1e-30_r_def
 
     vector_space_w2_ptr => function_space_collection % get_fs(mesh, element_order_h, &
                                                               element_order_v, w2)
@@ -236,14 +260,33 @@ module adjt_interpolation_alg_mod
                  x_innerproduct_x(v3_inner_prod, v_in_w3), &
                  x_innerproduct_x(wt_inner_prod, w_in_wth) )
 
+    write(log_scratch_space, *) "adjt_interp_w3wth_to_w2 inner products:"
+    call log_event( log_scratch_space, log_level_debug )
+    write(log_scratch_space, *) "u_in_w2 inner product = ", u2_inner_prod
+    call log_event( log_scratch_space, log_level_debug )
+    write(log_scratch_space, *) "u_in_w3 inner product = ", u3_inner_prod
+    call log_event( log_scratch_space, log_level_debug )
+    write(log_scratch_space, *) "v_in_w3 inner product = ", v3_inner_prod
+    call log_event( log_scratch_space, log_level_debug )
+    write(log_scratch_space, *) "w_in_wth inner product = ", wt_inner_prod
+    call log_event( log_scratch_space, log_level_debug )
+
+    u2_sf = 1.0_r_def / (u2_inner_prod + eps)
+    u3_sf = 1.0_r_def / (u3_inner_prod + eps)
+    v3_sf = 1.0_r_def / (v3_inner_prod + eps)
+    wt_sf = 1.0_r_def / (wt_inner_prod + eps)
+
     inner1 = 0.0_r_def
-    inner1 = inner1 + u2_inner_prod * u_in_w2_sf
-    inner1 = inner1 + u3_inner_prod
-    inner1 = inner1 + v3_inner_prod
-    inner1 = inner1 + wt_inner_prod
+    inner1 = inner1 + u2_inner_prod * u2_sf
+    inner1 = inner1 + u3_inner_prod * u3_sf
+    inner1 = inner1 + v3_inner_prod * v3_sf
+    inner1 = inner1 + wt_inner_prod * wt_sf
 
     ! Scaling fields
-    call invoke( inc_a_times_X( u_in_w2_sf, u_in_w2 ) )
+    call invoke( inc_a_times_X( u2_sf, u_in_w2 ), &
+                 inc_a_times_X( u3_sf, u_in_w3 ), &
+                 inc_a_times_X( v3_sf, v_in_w3 ), &
+                 inc_a_times_X( wt_sf, w_in_wth ) )
 
     u2_u2_inp_inner_prod = 0.0_r_def
     u3_u3_inp_inner_prod = 0.0_r_def

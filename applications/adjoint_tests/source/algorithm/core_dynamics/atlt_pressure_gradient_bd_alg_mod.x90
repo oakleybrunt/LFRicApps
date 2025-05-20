@@ -77,10 +77,13 @@ module atlt_pressure_gradient_bd_alg_mod
 
     ! Inner products
     real(kind=r_def)               :: r_u_inner_prod
-    real(kind=r_def),    parameter :: r_u_sf = 1.0E-24_r_def
     real(kind=r_def)               :: exner_inner_prod
     real(kind=r_def)               :: theta_inner_prod
     real(kind=r_def), dimension(3) :: moist_dyn_inner_prod
+    real(kind=r_def)               :: r_u_sf
+    real(kind=r_def)               :: exner_sf
+    real(kind=r_def)               :: theta_sf
+    real(kind=r_def), dimension(3) :: moist_dyn_sf
     real(kind=r_def)               :: inner1
     real(kind=r_def)               :: r_u_r_u_input_inner_prod
     real(kind=r_def)               :: exner_exner_input_inner_prod
@@ -92,6 +95,7 @@ module atlt_pressure_gradient_bd_alg_mod
     real(kind=r_def), parameter :: overall_tolerance = 1500.0_r_def
     real(kind=r_def)            :: machine_tol
     real(kind=r_def)            :: relative_diff
+    real(kind=r_def), parameter :: eps = 1e-30_r_def
 
     ! Misc
     class(reference_element_type), pointer :: reference_element
@@ -166,16 +170,9 @@ module atlt_pressure_gradient_bd_alg_mod
                  x_innerproduct_x( moist_dyn_inner_prod(2_i_def), moist_dyn(2_i_def) ), &
                  x_innerproduct_x( moist_dyn_inner_prod(3_i_def), moist_dyn(3_i_def) ) )
 
-    inner1 = 0.0_r_def
-    inner1 = inner1 + r_u_inner_prod*r_u_sf
-    inner1 = inner1 + exner_inner_prod
-    inner1 = inner1 + theta_inner_prod
-    inner1 = inner1 + moist_dyn_inner_prod(1_i_def)
-    inner1 = inner1 + moist_dyn_inner_prod(2_i_def)
-    inner1 = inner1 + moist_dyn_inner_prod(3_i_def)
     write(log_scratch_space, *) "atlt_pressure_gradient_bd inner products:"
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
-    write(log_scratch_space, *) "r_u inner product = ", r_u_inner_prod*r_u_sf
+    write(log_scratch_space, *) "r_u inner product = ", r_u_inner_prod
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
     write(log_scratch_space, *) "exner inner product = ", exner_inner_prod
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
@@ -188,6 +185,21 @@ module atlt_pressure_gradient_bd_alg_mod
     write(log_scratch_space, *) "moist_dyn(3) inner product = ", moist_dyn_inner_prod(3_i_def)
     call log_event( log_scratch_space, LOG_LEVEL_DEBUG )
 
+    r_u_sf = 1.0_r_def / (r_u_inner_prod + eps)
+    exner_sf = 1.0_r_def / (exner_inner_prod + eps)
+    theta_sf = 1.0_r_def / (theta_inner_prod + eps)
+    moist_dyn_sf(1_i_def) = 1.0_r_def / (moist_dyn_inner_prod(1_i_def) + eps)
+    moist_dyn_sf(2_i_def) = 1.0_r_def / (moist_dyn_inner_prod(2_i_def) + eps)
+    moist_dyn_sf(3_i_def) = 1.0_r_def / (moist_dyn_inner_prod(3_i_def) + eps)
+
+    inner1 = 0.0_r_def
+    inner1 = inner1 + r_u_inner_prod * r_u_sf
+    inner1 = inner1 + exner_inner_prod * exner_sf
+    inner1 = inner1 + theta_inner_prod * theta_sf
+    inner1 = inner1 + moist_dyn_inner_prod(1_i_def) * moist_dyn_sf(1_i_def)
+    inner1 = inner1 + moist_dyn_inner_prod(2_i_def) * moist_dyn_sf(2_i_def)
+    inner1 = inner1 + moist_dyn_inner_prod(3_i_def) * moist_dyn_sf(3_i_def)
+
     r_u_r_u_input_inner_prod = 0.0_r_def
     exner_exner_input_inner_prod = 0.0_r_def
     theta_theta_input_inner_prod = 0.0_r_def
@@ -196,7 +208,12 @@ module atlt_pressure_gradient_bd_alg_mod
     moist_dyn_moist_dyn_input_inner_prod(3_i_def) = 0.0_r_def
 
     ! Scaling fields
-    call invoke( inc_a_times_X( r_u_sf, r_u ) )
+    call invoke( inc_a_times_X( r_u_sf, r_u ),                               &
+                 inc_a_times_X( exner_sf, exner ),                           &
+                 inc_a_times_X( theta_sf, theta ),                           &
+                 inc_a_times_X( moist_dyn_sf(1_i_def), moist_dyn(1_i_def) ), &
+                 inc_a_times_X( moist_dyn_sf(2_i_def), moist_dyn(2_i_def) ), &
+                 inc_a_times_X( moist_dyn_sf(3_i_def), moist_dyn(3_i_def) ) )
 
     ! < AMx, x >
     call invoke( atl_pressure_gradient_bd_kernel_type( r_u, stencil_extent,            &

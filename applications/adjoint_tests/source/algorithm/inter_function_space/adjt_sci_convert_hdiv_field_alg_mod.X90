@@ -18,6 +18,7 @@ module adjt_sci_convert_hdiv_field_alg_mod
   use setop_random_kernel_mod,              only: setop_random_kernel_type
   use log_mod,                              only: log_event, &
                                                   log_level_error, &
+                                                  log_level_debug, &
                                                   log_level_info, &
                                                   log_scratch_space
 
@@ -61,6 +62,8 @@ module adjt_sci_convert_hdiv_field_alg_mod
     ! Inner products
     real(kind=r_def), dimension(3) :: physical_field3_inner_prod
     real(kind=r_def)               :: computational_field_inner_prod
+    real(kind=r_def), dimension(3) :: physical_field3_sf
+    real(kind=r_def)               :: computational_field_sf
     real(kind=r_def)               :: inner1
     real(kind=r_def), dimension(3) :: physical_field3_physical_field3_input_inner_prod
     real(kind=r_def)               :: computational_field_computational_field_input_inner_prod
@@ -70,6 +73,7 @@ module adjt_sci_convert_hdiv_field_alg_mod
     real(kind=r_def)            :: machine_tol
     real(kind=r_def)            :: relative_diff
     real(kind=r_def), parameter :: overall_tolerance = 1500.0_r_def
+    real(kind=r_def), parameter :: eps = 1e-30_r_def
 
     ! Initialise arguments
     vector_space_w3_ptr => function_space_collection % get_fs(mesh, element_order_h, &
@@ -96,13 +100,23 @@ module adjt_sci_convert_hdiv_field_alg_mod
                  convert_hdiv_field_kernel_type(physical_field3, computational_field, chi, panel_id) )
 
     ! Get dot product <M dx, M dx>
+    write(log_scratch_space, *) "adjt_sci_convert_hdiv_field inner products:"
+    call log_event( log_scratch_space, log_level_debug )
     inner1 = 0.0_r_def
     do idx = 1, 3
       call invoke( X_innerproduct_X(physical_field3_inner_prod(idx), physical_field3(idx)) )
-      inner1 = inner1 + physical_field3_inner_prod(idx)
+      write(log_scratch_space, *) "physical_field3(", idx, ") inner product = ", physical_field3_inner_prod(idx)
+      call log_event( log_scratch_space, log_level_debug )
+      physical_field3_sf(idx) = 1.0_r_def / (physical_field3_inner_prod(idx) + eps)
+      inner1 = inner1 + physical_field3_inner_prod(idx) * physical_field3_sf(idx)
+      call invoke(inc_a_times_X( physical_field3_sf(idx), physical_field3(idx) ))
     end do
     call invoke( X_innerproduct_X(computational_field_inner_prod, computational_field) )
-    inner1 = inner1 + computational_field_inner_prod
+    write(log_scratch_space, *) "computational_field inner product = ", computational_field_inner_prod
+    call log_event( log_scratch_space, log_level_debug )
+    computational_field_sf = 1.0_r_def / (computational_field_inner_prod + eps)
+    inner1 = inner1 + computational_field_inner_prod * computational_field_sf
+    call invoke(inc_a_times_X( computational_field_sf, computational_field ))
 
     ! Call adjoint
     call invoke_adj_convert_hdiv_field_kernel(physical_field3, computational_field, chi, panel_id)
