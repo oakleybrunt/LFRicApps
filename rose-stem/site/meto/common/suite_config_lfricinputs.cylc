@@ -19,7 +19,7 @@
 
     [[AZSPICE_LFRICINPUTS]]
         platform = spice
-        execution time limit = PT45M
+        execution time limit = PT10M
         [[[environment]]]
             FASTMEM         = \$TMPDIR
             BIG_DATA_DIR    = "/data/users/lfricadmin/data"
@@ -89,7 +89,7 @@
 
     [[EX1A_LFRICINPUTS]]
         platform = {{site_vars.host_ex}}
-        execution time limit = PT45M
+        execution time limit = PT10M
         [[[environment]]]
             ROSE_APP_COMMAND_KEY = ex1a_xios_server
 {% if site_vars["host_ex"] == "exz" %}
