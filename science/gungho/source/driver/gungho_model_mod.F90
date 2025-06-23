@@ -845,7 +845,7 @@ contains
 
       ! Get length of random seed array required by the compiler
       call RANDOM_SEED(size = random_seed_size)
-      allocate(ranseed(random_seed_size))
+      allocate(ranseed(random_seed_size+1))
 
       ! Get processor rank for unique seed on each processor
       proc_rank = modeldb%mpi%get_comm_rank()
@@ -855,14 +855,11 @@ contains
 
       ! Allocate random seed across array with some added entropy from
       ! big_int and array index
-      do i = 1, random_seed_size - 1
-        ranseed(i) = i*perturb_seed + proc_rank*big_int
-      end do
+      ranseed(:) = perturb_seed + proc_rank*big_int
 
       ! Set seed
-      call RANDOM_SEED(PUT = ranseed)
+      call RANDOM_SEED(PUT = ranseed(1:random_seed_size))
     end if
-
 
 
     !=======================================================================

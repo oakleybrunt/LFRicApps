@@ -163,7 +163,8 @@
         "psyclone",
         "generate_weights",
         "rose_ana",
-        "perftools-export"] %}
+        "perftools-export",
+        "pert_compare"] %}
 
     {# Remove a task prefix if listed above #}
     {% for prefix in task_prefixes %}

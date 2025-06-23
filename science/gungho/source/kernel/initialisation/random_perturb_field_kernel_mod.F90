@@ -22,6 +22,9 @@ module random_perturb_field_kernel_mod
   use constants_mod,              only : r_def, i_def, pi
   use kernel_mod,                 only : kernel_type
 
+  use log_mod,                   only : log_event, log_scratch_space,     &
+                                        LOG_LEVEL_INFO
+
   implicit none
 
   !-----------------------------------------------------------------------------
@@ -60,25 +63,29 @@ module random_perturb_field_kernel_mod
 
     integer(kind=i_def), intent(in)     :: perturb_magnitude
 
-    integer(kind=i_def) :: k, df
+    integer(kind=i_def) :: k, df, top_df
     real(kind=r_def)    :: pert, u
 
-    do k = 0, nlayers - 1
-      do df = 1, ndf_field
-        ! Get the uniformly distributed numbers
-        call random_number(pert)
-        call random_number(u)
+    ! Assume lowest order scalar field
+    df = 1
 
-        ! Apply the Box-Muller transformation (0 <= u, pert < 1 so this LOG is
-        ! safe). Reuse pert for this
-        pert = SQRT(-2.0_r_def*LOG(1.0_r_def - u))*COS(2.0_r_def*pi*pert)
+    ! If the field is Wtheta loop to the very top
+    top_df = nlayers + ndf_field - 2
 
-        ! Apply the magnitude scaling defined in the namelist options
-        pert = pert*10.0_r_def**perturb_magnitude
+    do k = 0, top_df
+      ! Get the uniformly distributed numbers
+      call random_number(pert)
+      call random_number(u)
 
-        ! Add the perturbation
-        field(map_field(df) + k) = field(map_field(df) + k) + pert
-      end do
+      ! Apply the Box-Muller transformation (0 <= u < 1 so this LOG is
+      ! safe). Reuse pert for this
+      pert = SQRT(-2.0_r_def*LOG(1.0_r_def - u))*COS(2.0_r_def*pi*pert)
+
+      ! Apply the magnitude scaling defined in the namelist options
+      pert = pert*10.0_r_def**perturb_magnitude
+
+      ! Add the perturbation
+      field(map_field(df) + k) = field(map_field(df) + k) + pert
     end do
 
   end subroutine random_perturb_field_code

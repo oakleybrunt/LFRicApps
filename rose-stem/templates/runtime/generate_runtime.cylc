@@ -55,6 +55,9 @@
         {% set task_output_dir = task_output_dir~
                                  "-crun"~task_values["restart_no"] %}
     {% endif %}
+    {% if "pert_off" in task %}
+        {% set task_output_dir = task_output_dir~"_pert_off" %}
+    {% endif %}
     {% set working_dir = "$BUILD_ROOT/$CYLC_WORKFLOW_ID/"~build_segment%}
 
     {# Import macros to set custom directive values for this platform #}
@@ -96,7 +99,7 @@
 
         {% include "templates/runtime/generate_runtime_lfric_coupled.cylc" %}
 
-    {# Everything else - plot, phystest and checksum for now #}
+    {# Everything else - plot, phystest, checksum and pert_compare for now #}
     {% else %}
 
         {% include "templates/runtime/generate_runtime_other.cylc" %}

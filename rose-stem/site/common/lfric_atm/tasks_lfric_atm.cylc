@@ -60,6 +60,23 @@
         "plot_str": "plot_map.py $NODAL_DATA_DIR/lfric_diag.nc  $PLOT_DIR",
     }) %}
 
+{% elif task_ns.conf_name == "nwp_gal9-pert-C12" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["um_dump","test_diags", "perturb"],
+        "resolution": "C12",
+        "DT": 1800,
+        "tsteps": 10,
+        "mpi_parts": 24,
+        "kgo_checks": ["checksum"],
+        "plot_str": "plot_map.py $NODAL_DATA_DIR/lfric_diag.nc  $PLOT_DIR",
+        "threads": 1,
+        "pert_compare": true,
+        "pert_plot_str": "l2_time_series.py $PERT_ON_TASK/results/ $PERT_OFF_TASK/results/ \
+                          $PLOT_DIR T000000:T000001.8:T000003.6:T000005.4:T000007.2:T000009.0:T000010.8:T000012.6:T000014.4:T000016.2:T000018 \
+                          theta",
+    }) %}
+
 {% elif task_ns.conf_name == "nwp_gal9_mgnoukca-C48_MG" %}
     {% do task_dict.update({
         "opt_confs": ["no_dust","um_dump","no_diags"],

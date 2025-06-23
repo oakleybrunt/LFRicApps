@@ -273,4 +273,8 @@
     {% include "templates/graph/populate_crun_graph.cylc" %}
 {% endif %}
 
+{% if task_values["pert_compare"] %}
+    {% include "templates/graph/populate_pert_compare_graph.cylc" %}
+{% endif %}
+
 {% do LOG.debug("Finished in templates/graph/populate_graph_sections.cylc") %}

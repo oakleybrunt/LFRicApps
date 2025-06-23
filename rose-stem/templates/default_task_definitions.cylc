@@ -137,6 +137,10 @@
     {% do task_dict.update({"task_ranks_depth_pad": 1}) %}
 {% endif %}
 
+{% if "pert_compare" not in task_dict %}
+    {% do task_dict.update({"pert_compare": false}) %}
+{% endif %}
+
 {# Canned tests don't require resolution defining #}
 {# Enter a placeholder to prevent an Undefined Error #}
 {% if task_dict["app_name"] == "canned_test" %}

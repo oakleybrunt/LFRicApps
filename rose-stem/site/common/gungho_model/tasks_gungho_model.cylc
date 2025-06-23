@@ -34,6 +34,21 @@
         "plot_str": "baroclinic.py $NODAL_DATA_DIR/lfric_diag.nc $PLOT_DIR dcmip dry surface_pressure_temperature",
     }) %}
 
+{% elif task_ns.conf_name == "baroclinic-pert-C24_MG" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["baroclinic-pert"],
+        "resolution": "C24_MG",
+        "DT": 3600,
+        "threads": 1,
+        "mpi_parts": 6,
+        "tsteps": 10,
+        "wallclock": 30,
+        "pert_compare": true,
+        "pert_plot_str": "l2_time_series.py $PERT_ON_TASK/results/ $PERT_OFF_TASK/results/ \
+                          $PLOT_DIR T000000:T000003.6:T000007.2:T000010.8:T000014.4:T000018.0:T000021.6:T000025.2:T000028.8:T000032.4:T000036",
+    }) %}
+
 {% elif task_ns.conf_name == "baroclinic-alt1-C24s_MG" %}
 
     {% do task_dict.update({

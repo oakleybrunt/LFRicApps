@@ -10,6 +10,7 @@
     "gungho_model_azspice_developer": [
         "gungho_model_agnesi_hyd_cart-BiP120x8-2000x2000_azspice_gnu_fast-debug-64bit",
         "gungho_model_baroclinic-C24_MG_azspice_gnu_fast-debug-64bit",
+        "gungho_model_baroclinic-pert-C24_MG_azspice_gnu_fast-debug-64bit",
         "gungho_model_baroclinic-alt1-C24s_MG_azspice_gnu_fast-debug-64bit",
         "gungho_model_baroclinic-alt2-C24_MG_op_azspice_gnu_fast-debug-64bit",
         "gungho_model_baroclinic-alt3-C24_MG_azspice_gnu_fast-debug-64bit-rtran32",
@@ -69,6 +70,7 @@
     "gungho_model_ex1a_developer": [
         "gungho_model_agnesi_hyd_cart-BiP120x8-2000x2000_ex1a_gnu_fast-debug-64bit",
         "gungho_model_baroclinic-C24_MG_ex1a_gnu_fast-debug-64bit",
+        "gungho_model_baroclinic-pert-C24_MG_ex1a_gnu_fast-debug-64bit",
         "gungho_model_baroclinic-alt1-C24s_MG_ex1a_gnu_fast-debug-64bit",
         "gungho_model_baroclinic-alt2-C24_MG_op_ex1a_gnu_fast-debug-64bit",
         "gungho_model_baroclinic-alt3-C24_MG_ex1a_gnu_fast-debug-64bit",

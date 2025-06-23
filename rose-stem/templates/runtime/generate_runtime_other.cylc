@@ -138,6 +138,28 @@
         [[[directives]]]
     {{ set_task_resources(task_values["tech-tests_cpus"], task_values["tech-tests_memory"]) }}
 
+{% elif task.startswith("pert_compare") %}
+{# Perturbation Comparison Tests #}
+
+    {% for family in task_values["plot_families"] %}
+        {% set inherit.str = inherit.str~","~family|upper %}
+    {% endfor %}
+
+    {% set perturb_output = task_output_dir %}
+    {% set perturb_off_output = perturb_output~"_pert_off" %}
+
+    [[{{task}}]]
+        inherit={{inherit.str|upper}}
+        script = 'rose task-run --app-key=perturbation_compare'
+        execution time limit = PT{{task_values["tech-tests_wallclock"]}}M
+        [[[environment]]]
+            PERT_ON_TASK  = {{perturb_output}}
+            PERT_OFF_TASK = {{perturb_off_output}}
+            PLOT_DIR      = {{task_output_dir}}/plots
+            PERT_CONFIG   = {{task_values["pert_plot_str"]}}
+        [[[directives]]]
+    {{ set_task_resources(task_values["tech-tests_cpus"], task_values["tech-tests_memory"]) }}
+
 {% endif %}
 
 

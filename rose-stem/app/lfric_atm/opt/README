@@ -90,3 +90,4 @@ Configuration specific settings
 - test_diags - simple diagnostics for testing
 - um_dump - global run starts from a UM dump
 - scm_45N - specifies the latitude as 45N for a single-column setup
+- perturb - Runs a second test with theta perturbed and compares the two
