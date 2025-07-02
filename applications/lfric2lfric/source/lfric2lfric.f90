@@ -17,18 +17,15 @@ program lfric2lfric
   use cli_mod,                only: get_initial_filename
   use constants_mod,          only: precision_real
   use driver_collections_mod, only: init_collections, final_collections
-  use driver_config_mod,      only: init_config, final_config
   use driver_comm_mod,        only: init_comm, final_comm
+  use driver_config_mod,      only: init_config, final_config
   use driver_log_mod,         only: init_logger, final_logger
   use driver_modeldb_mod,     only: modeldb_type
   use driver_time_mod,        only: init_time, final_time
-#ifdef MCT
-  use coupling_mod,           only: coupling_type
-#endif
+  use lfric_mpi_mod,          only: global_mpi
   use log_mod,                only: log_event,       &
                                     log_level_trace, &
                                     log_scratch_space
-  use lfric_mpi_mod,          only: global_mpi
 
   use lfric2lfric_mod,        only: lfric2lfric_required_namelists
   use lfric2lfric_driver_mod, only: initialise, run, finalise
@@ -42,18 +39,13 @@ program lfric2lfric
   character(:),     allocatable :: filename
 
   ! Source and destination XIOS context names
-  character(len=*), parameter  :: context_dst = "lfric2lfric_destination"
-  character(len=*), parameter  :: context_src = "lfric2lfric_source"
+  character(len=*), parameter  :: xios_ctx_dst = "lfric2lfric_destination"
+  character(len=*), parameter  :: xios_ctx_src = "lfric2lfric_source"
 
   ! Source and destination field collection names
   character(len=*), parameter  :: source_collection_name = "source_fields"
   character(len=*), parameter  :: target_collection_name = "target_fields"
 
-
-#ifdef MCT
-  ! Coupler objects
-  type(coupling_type)          :: coupler
-#endif
 
   call modeldb%configuration%initialise( program_name, table_len=10 )
 
@@ -64,15 +56,7 @@ program lfric2lfric
 
   modeldb%mpi => global_mpi
 
-#ifdef MCT
-  call modeldb%values%initialise( 'values', table_len=5 )
-  call modeldb%values%add_key_value('cpl_name', program_name)
-  ! Create a second coupling object for single executable coupling
-  ! We do not initialise or finalise it as initialising will set up
-  ! MPI communication and this can only be done once
-  call modeldb%values%add_key_value('coupling_dst', coupler)
-#endif
-  call init_comm( program_name, modeldb )
+  call init_comm( "lfric2lfric", modeldb )
   call get_initial_filename( filename )
   call init_config( filename, lfric2lfric_required_namelists, &
                     modeldb%configuration                     )
@@ -87,11 +71,13 @@ program lfric2lfric
   call modeldb%io_contexts%initialise(program_name, 100)
 
   call log_event( 'Initialising ' // program_name // ' ...', log_level_trace )
-  call initialise( modeldb, context_src, context_dst,            &
+  call initialise( modeldb,                                       &
+                   xios_ctx_src, xios_ctx_dst,                    &
                    source_collection_name, target_collection_name )
 
-  call run( modeldb, context_src, context_dst,            &
-            source_collection_name, target_collection_name )
+  call run( modeldb,                                        &
+            xios_ctx_src, xios_ctx_dst,                     &
+            source_collection_name, target_collection_name  )
 
   call log_event( 'Finalising ' // program_name // ' ...', log_level_trace )
   call finalise( program_name, modeldb )

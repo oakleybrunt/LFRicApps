@@ -19,8 +19,5 @@
 {% if "lfric_coupled" in requested_applications %}
     {% include 'site/meto/common/suite_config_lfric_coupled.cylc' %}
 {% endif %}
-{% if "lfric2lfric" in requested_applications %}
-    {% include 'site/meto/common/suite_config_lfric2lfric.cylc' %}
-{% endif %}
 
 {% do LOG.debug("Finished in site/meto/suite_config.cylc") %}

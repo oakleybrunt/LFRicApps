@@ -12,49 +12,43 @@
 !>
 module lfric2lfric_infrastructure_mod
 
-  use add_mesh_map_mod,            only: assign_mesh_maps
-  use constants_mod,               only: str_def, r_def, i_def, l_def
-  use create_mesh_mod,             only: create_mesh
-  use driver_modeldb_mod,          only: modeldb_type
-  use driver_fem_mod,              only: init_fem
-  use driver_io_mod,               only: init_io, &
+  use add_mesh_map_mod,           only : assign_mesh_maps
+  use constants_mod,              only : str_def, r_def, i_def, l_def
+  use create_mesh_mod,            only : create_mesh
+  use driver_modeldb_mod,         only : modeldb_type
+  use driver_fem_mod,             only : init_fem
+  use driver_io_mod,              only : init_io, &
                                          filelist_populator
-  use extrusion_mod,               only: extrusion_type,         &
+  use extrusion_mod,              only : extrusion_type,         &
                                          uniform_extrusion_type, &
                                          TWOD
-  use field_mod,                   only: field_type
-  use gungho_extrusion_mod,        only: create_extrusion
-  use inventory_by_mesh_mod,       only: inventory_by_mesh_type
-  use io_context_mod,              only: callback_clock_arg
-  use linked_list_mod,             only: linked_list_type
-  use lfric_xios_context_mod,      only: lfric_xios_context_type
-  use lfric_xios_action_mod,       only: advance
-  use log_mod,                     only: log_event,         &
-                                         log_scratch_space, &
-                                         log_level_error,   &
+  use field_mod,                  only : field_type
+  use gungho_extrusion_mod,       only : create_extrusion
+  use inventory_by_mesh_mod,      only : inventory_by_mesh_type
+  use io_context_mod,             only : callback_clock_arg
+  use linked_list_mod,            only : linked_list_type
+  use lfric_xios_context_mod,     only : lfric_xios_context_type
+  use lfric_xios_action_mod,      only : advance
+  use log_mod,                    only : log_event,       &
+                                         log_level_error, &
                                          log_level_debug
-  use mesh_mod,                    only: mesh_type
-  use mesh_collection_mod,         only: mesh_collection
-  use namelist_mod,                only: namelist_type
+  use mesh_mod,                   only : mesh_type
+  use mesh_collection_mod,        only : mesh_collection
+  use namelist_mod,               only : namelist_type
 
   !------------------------------------
   ! lfric2lfric modules
   !------------------------------------
-  use lfric2lfric_init_mesh_mod,   only: init_mesh
-  use lfric2lfric_check_conf_mod,  only: lfric2lfric_check_configuration
-  use lfric2lfric_file_init_mod,   only: init_lfric2lfric_dst_files, &
-                                          init_lfric2lfric_src_files
-  use lfric2lfric_init_mod,        only: init_lfric2lfric
-  use lfric2lfric_init_coupler_mod,only: lfric2lfric_init_coupler_src, &
-                                         lfric2lfric_init_coupler_dst, &
-                                         lfric2lfric_end_coupler_init
+  use lfric2lfric_init_mesh_mod,  only : init_mesh
+  use lfric2lfric_check_conf_mod, only : lfric2lfric_check_configuration
+  use lfric2lfric_file_init_mod,  only : init_lfric2lfric_dst_files, &
+                                         init_lfric2lfric_src_files
+  use lfric2lfric_init_mod,       only : init_lfric2lfric
 
   !------------------------------------
   ! Configuration modules
   !------------------------------------
-  use lfric2lfric_config_mod,     only : regrid_method_oasis,       &
-                                         regrid_method_lfric2lfric, &
-                                         regrid_method_map,         &
+  use lfric2lfric_config_mod,     only : regrid_method_map,         &
                                          source_geometry_spherical, &
                                          source_geometry_planar
   use base_mesh_config_mod,       only : geometry_planar, &
@@ -74,24 +68,24 @@ contains
   !!                 extrusions, XIOS contexts and files, field collections and
   !!                 fields.
   !> @param [in,out] modeldb                 The structure holding model state
-  !> @param [in]     context_src             The name of the XIOS context that
+  !> @param [in]     xios_ctx_src            The name of the XIOS context that
   !!                                         will hold the source file
-  !> @param [in]     context_dst             The name of the XIOS context that
+  !> @param [in]     xios_ctx_dst            The name of the XIOS context that
   !!                                         will hold the file to be written
   !> @param [in]     source_collection_name  The name of the field collection
   !!                                         that will store the source fields
   !> @param [in]     target_collection_name  The name of the field collection
   !!                                         that will store the target fields
   subroutine initialise_infrastructure( modeldb,                    &
-                                        context_src, context_dst,   &
+                                        xios_ctx_src, xios_ctx_dst, &
                                         source_collection_name,     &
                                         target_collection_name      )
 
     implicit none
 
     type(modeldb_type),     intent(inout) :: modeldb
-    character(len=*),       intent(in)    :: context_src
-    character(len=*),       intent(in)    :: context_dst
+    character(len=*),       intent(in)    :: xios_ctx_src
+    character(len=*),       intent(in)    :: xios_ctx_dst
     character(len=*),       intent(in)    :: source_collection_name
     character(len=*),       intent(in)    :: target_collection_name
 
@@ -117,7 +111,6 @@ contains
     type(namelist_type), pointer :: extrusion_nml
     type(namelist_type), pointer :: lfric2lfric_nml
     type(namelist_type), pointer :: files_nml
-    type(namelist_type), pointer :: finite_element_nml
 
     ! Namelist parameters
     character(len=str_def)                 :: mesh_names(2)
@@ -133,14 +126,12 @@ contains
     integer(i_def)          :: regrid_method
     real(kind=r_def)        :: domain_bottom
     real(kind=r_def)        :: scaled_radius
-    integer(kind=i_def)     :: element_order_h
-    integer(kind=i_def)     :: element_order_v
 
-    integer(kind=i_def)     :: geometry
-    integer(kind=i_def)     :: extrusion_method
+    integer :: geometry
+    integer :: extrusion_method
 
-    integer(kind=i_def)     :: number_of_layers
-    real(kind=r_def)        :: domain_height
+    integer(i_def) :: number_of_layers
+    real(r_def)    :: domain_height
 
     integer(kind=i_def)            :: i
     integer(kind=i_def), parameter :: one_layer = 1_i_def
@@ -162,15 +153,13 @@ contains
     type(lfric_xios_context_type), pointer :: io_context_dst
     type(linked_list_type),        pointer :: file_list
 
-
     ! -------------------------------
     ! 0.0 Extract namelist variables
     ! -------------------------------
-    planet_nml         => modeldb%configuration%get_namelist('planet')
-    extrusion_nml      => modeldb%configuration%get_namelist('extrusion')
-    lfric2lfric_nml    => modeldb%configuration%get_namelist('lfric2lfric')
-    files_nml          => modeldb%configuration%get_namelist('files')
-    finite_element_nml => modeldb%configuration%get_namelist('finite_element')
+    planet_nml      => modeldb%configuration%get_namelist('planet')
+    extrusion_nml   => modeldb%configuration%get_namelist('extrusion')
+    lfric2lfric_nml => modeldb%configuration%get_namelist('lfric2lfric')
+    files_nml       => modeldb%configuration%get_namelist('files')
 
     call planet_nml%get_value( 'scaled_radius', scaled_radius )
     call extrusion_nml%get_value( 'method', extrusion_method )
@@ -189,8 +178,6 @@ contains
     call lfric2lfric_nml%get_value( 'target_domain', target_domain )
     call lfric2lfric_nml%get_value( 'source_geometry', source_geometry )
     call files_nml%get_value( 'start_dump_filename', start_dump_filename )
-    call finite_element_nml%get_value( 'element_order_h', element_order_h)
-    call finite_element_nml%get_value( 'element_order_v', element_order_v)
 
     !=======================================================================
     ! 1.0 Mesh
@@ -238,6 +225,9 @@ contains
     end do
     call create_mesh( mesh_names, extrusion_2d, &
                       alt_name=twod_names )
+    if (regrid_method == regrid_method_map) then
+      call assign_mesh_maps(twod_names)
+    end if
 
     !=======================================================================
     ! 2.0 Build the FEM function spaces and coordinate fields
@@ -256,6 +246,8 @@ contains
     twod_mesh_src => mesh_collection%get_mesh(trim(twod_names(src)))
     mesh_dst      => mesh_collection%get_mesh(trim(mesh_names(dst)))
     twod_mesh_dst => mesh_collection%get_mesh(trim(twod_names(dst)))
+
+    deallocate(twod_names)
 
     ! Log this change
     call log_event('Source mesh set to: '           &
@@ -282,14 +274,14 @@ contains
     files_init_ptr => init_lfric2lfric_dst_files
 
     ! Initialise the IO context with all the required info
-    call init_io( context_dst,                      &
+    call init_io( xios_ctx_dst,                     &
                   mesh_names(dst),                  &
                   modeldb,                          &
                   chi_inventory,                    &
                   panel_id_inventory,               &
                   populate_filelist=files_init_ptr  )
 
-    call modeldb%io_contexts%get_io_context(context_dst, io_context_dst)
+    call modeldb%io_contexts%get_io_context(xios_ctx_dst, io_context_dst)
 
     ! Must call advance to align IO context clock with iodef and file
     ! output frequency
@@ -302,9 +294,9 @@ contains
     ! to initialise the source context manually with the desired mesh
 
     ! Add the source context to modeldb and return a pointer to it
-    call tmp_io_context_src%initialise(context_src)
+    call tmp_io_context_src%initialise(xios_ctx_src)
     call modeldb%io_contexts%add_context(tmp_io_context_src)
-    call modeldb%io_contexts%get_io_context(context_src, io_context_src)
+    call modeldb%io_contexts%get_io_context(xios_ctx_src, io_context_src)
 
     ! Get the file list of context and populate
     file_list => io_context_src%get_filelist()
@@ -324,50 +316,14 @@ contains
 
     ! Must call advance to align IO context clock with iodef and file
     ! output frequency
-    call advance(io_context_src, modeldb%clock)
+    call advance(io_context_dst, modeldb%clock)
 
     !=======================================================================
     ! 4.0 Create and initialise prognostic fields
     !=======================================================================
-    call init_lfric2lfric( modeldb, start_dump_filename,                    &
+    call init_lfric2lfric( modeldb, start_dump_filename,                   &
                            source_collection_name, mesh_src, twod_mesh_src, &
                            target_collection_name, mesh_dst, twod_mesh_dst )
-
-    !=======================================================================
-    ! 5.0 Initialize variables for each regrid method
-    !=======================================================================
-    select case (regrid_method)
-      case (regrid_method_map)
-        if (regrid_method == regrid_method_map) then
-          call assign_mesh_maps(twod_names)
-        end if
-
-      case (regrid_method_lfric2lfric)
-
-      case (regrid_method_oasis)
-#ifdef MCT
-        ! Create oasis partitions and coupling variables
-        ! Source fields
-        call lfric2lfric_init_coupler_src(twod_mesh_src, "coupling",     &
-                                       element_order_h, element_order_v, &
-                                       modeldb)
-        ! Destination fields
-        call lfric2lfric_init_coupler_dst(twod_mesh_dst, "coupling_dst", &
-                                       element_order_h, element_order_v, &
-                                       modeldb)
-
-        ! Finish coupling definition
-        call lfric2lfric_end_coupler_init(modeldb, "coupling")
-#else
-        write(log_scratch_space,'(A)')                          &
-            'ERROR: selected regrid_method=oasis, but OASIS libraries '// &
-            'not available. Compile with MCT option.'
-        call log_event( log_scratch_space, log_level_error )
-#endif
-    end select
-
-    deallocate(twod_names)
-    deallocate(extrusion)
 
   end subroutine initialise_infrastructure
 

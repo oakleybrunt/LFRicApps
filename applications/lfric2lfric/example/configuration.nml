@@ -1,24 +1,25 @@
 
 !====================== LFRic2LFRic configuration namelist ====================
 &lfric2lfric
-destination_geometry    = 'spherical',
+coarse_to_fine          = .true.,
+destination_geometry    = 'spherical'
 destination_mesh_name   = 'dynamics',
-destination_meshfile_prefix = 'mesh_C24_MG',
-destination_topology    = 'fully_periodic',
+destination_meshfile_prefix = 'mesh_C16_MG',
+destination_topology    = 'fully_periodic'
 origin_domain           = 'global',
 prepartitioned_meshes   = .false.,
-regrid_method           = 'oasis',
-source_geometry         = 'spherical',
-source_meshfile_prefix  = 'mesh_C24_MG',
+regrid_method           = 'map',
+source_geometry         = 'spherical'
+source_meshfile_prefix  = 'mesh_C16_MG',
 source_mesh_name        = 'multigrid_l1',
-source_topology         = 'fully_periodic',
+source_topology         = 'fully_periodic'
 target_domain           = 'global',
 /
 !==============================================================================
 
 &base_mesh
 f_lat_deg               = 45.0,
-file_prefix             = 'mesh_C24_MG',
+file_prefix             = 'mesh_C16_MG',
 fplane                  = .false.,
 geometry                = 'spherical',
 prepartitioned          = .false.,
@@ -37,7 +38,7 @@ stretching_method       = 'smooth',
 
 &files
 diag_stem_name          = 'lfric2lfric_diag',
-start_dump_filename     = 'mesh_C12_MG_dump',
+start_dump_filename     = 'mesh_C16_MG_dump',
 checkpoint_stem_name    = 'restart_lfric2lfric',
 /
 
@@ -81,13 +82,13 @@ coord_order             = 1,
 /
 
 &partitioning
-  mesh_type             = 'destination',
+  mesh_type             = 'destination'
   partitioner           = 'cubedsphere',
   panel_decomposition   = 'auto',
 /
 
 &partitioning
-  mesh_type             = 'source',
+  mesh_type             = 'source'
   partitioner           = 'cubedsphere',
   panel_decomposition   = 'auto',
 /

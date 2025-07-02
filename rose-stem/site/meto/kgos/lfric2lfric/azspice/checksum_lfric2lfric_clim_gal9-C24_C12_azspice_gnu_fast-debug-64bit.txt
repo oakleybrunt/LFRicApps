@@ -1,3 +1,0 @@
-Inner product checksum zh =                0
-Inner product checksum rho =                0
-Inner product checksum theta =                0

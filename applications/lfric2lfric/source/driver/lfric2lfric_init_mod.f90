@@ -32,14 +32,14 @@ module lfric2lfric_init_mod
   !!           collection.
   !> @param [in,out]   modeldb                Holds model state
   !> @param [in]       start_dump_filename    File to get field names from
-  !> @param [in]       origin_collection_name Holds the origin fields
+  !> @param [in]       collection_name        Holds the origin fields
   !> @param [in]       origin_mesh            Mesh to initialise 3D fields
   !> @param [in]       origin_twod_mesh       Mesh to initialise 2D fields
   !> @param [in]       target_collection_name Holds target fields
   !> @param [in]       target_mesh            Mesh for target 3D fields
   !> @param [in]       target_twod_mesh       Mesh for target 2D fields
   subroutine init_lfric2lfric( modeldb, start_dump_filename,  &
-                               origin_collection_name,        &
+                               collection_name,               &
                                origin_mesh, origin_twod_mesh, &
                                target_collection_name,        &
                                target_mesh, target_twod_mesh  )
@@ -48,7 +48,7 @@ module lfric2lfric_init_mod
 
     type(modeldb_type), intent(inout)       :: modeldb
     character(len=*),   intent(in)          :: start_dump_filename
-    character(len=*),   intent(in)          :: origin_collection_name
+    character(len=*),   intent(in)          :: collection_name
     type(mesh_type),    intent(in), pointer :: origin_mesh
     type(mesh_type),    intent(in), pointer :: origin_twod_mesh
     ! Optionals
@@ -75,8 +75,8 @@ module lfric2lfric_init_mod
     ! Initialise Source Fields
     !--------------------------------------------------------------------------
     ! Initialise our field collection
-    call modeldb%fields%add_empty_field_collection(origin_collection_name)
-    field_collection => modeldb%fields%get_field_collection(origin_collection_name)
+    call modeldb%fields%add_empty_field_collection(collection_name)
+    field_collection => modeldb%fields%get_field_collection(collection_name)
 
     ! Now need to loop over length of config_list make field for each
     do i = 1, num_fields

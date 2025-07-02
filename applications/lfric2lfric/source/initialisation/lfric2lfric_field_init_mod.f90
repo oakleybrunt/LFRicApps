@@ -56,6 +56,7 @@ contains
   !> @param [in]  file_name     Input file to be checked
   subroutine get_field_list(num_fields, config_list, file_name)
 
+
     implicit none
 
     integer(kind=i_def),                 intent(out) :: num_fields
@@ -82,31 +83,39 @@ contains
     if (allocated(config_list)) deallocate(config_list)
     allocate(config_list(nvar))
 
-    ! Loop over the number of fields and extract field name from the input file
+    ! Set up our counter
     num_fields = 0
+
+    ! Loop over the number of fields and extract field name from the input
+    ! file
     do i = 1, nvar
 
-        ! Read from file set to 'ierr' because it is an unused variable
+        ! Read from file set to 'ierr' becuase it is an unused variable
         ierr = nf90_inquire_variable(input_file%get_id(), &
                                      varid_list(i),       &
                                      name=var_name        )
 
         if (field_is_valid('restart_'//trim(var_name))) then
             num_fields = num_fields + 1                         ! Increment counter
-            config_list(num_fields) = trim(var_name)            ! Add field to the config_list
+            config_list(num_fields) = trim(var_name)            ! Add field to the
+                                                                ! config_list
 
             ! Log the field name to the console
             write(log_scratch_space, '(A)') &
               "Found variable: " // trim(var_name)
             call log_event(log_scratch_space, log_level_info)
+
         else
           write(log_scratch_space, '(A)') &
             "Field not found in iodef file, skipping: "//&
             "restart_"//trim(var_name)
           call log_event(log_scratch_space, log_level_trace)
+
         endif
+
     end do
 
+    ! Deallocate var_id_list and close file
     deallocate(varid_list)
     call input_file%close_file()
 

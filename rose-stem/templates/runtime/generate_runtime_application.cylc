@@ -45,15 +45,6 @@
 {# Set the read/write filenames for restarts #}
 {% set restart_stem_name = checkpoint_dir~"/restart_"~task_family~"_tstep" %}
 
-{# If lfric2lfric, set the weights loc #}
-{% set weight_loc = "" %}
-{% if task_ns.application == "lfric2lfric" %}
-    {% set weight_loc = "$CYLC_WORKFLOW_WORK_DIR/1/generate_weights_lfric2lfric_"~
-                        task_ns.conf_name~"_"~
-                        site_vars["scripts_platform"]~
-                        "_weightgen_script" %}
-{% endif %}
-
 {# Set the pre-script command for canned tests #}
 {% set canned_prescript = "cp -r $SOURCE_DIRECTORY/"~task_values["example_dir"]~"/* "~
                           "$CYLC_TASK_WORK_DIR" %}
@@ -130,7 +121,6 @@
             CORES_PER_NODE_OVERRIDE = {{task_values["task_ranks_per_node"]}}
             RANKS_DEPTH_PAD         = {{task_values["task_ranks_depth_pad"]}}
             LOG_SOLE_RANK           = {{task_values["log_to_rank_zero_only"]}}
-            WEIGHT_LOC              = {{weight_loc}}
             {% if "memory_plot_ex" in task_values %}
             MEMORY_PROFILE          = {{task_values["memory_plot_ex"]}}
             {% endif %}

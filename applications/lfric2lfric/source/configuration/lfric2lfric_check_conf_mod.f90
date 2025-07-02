@@ -17,9 +17,9 @@ module lfric2lfric_check_conf_mod
   use namelist_mod,           only : namelist_type
 
   ! Configuration modules
-  use lfric2lfric_config_mod, only : ORIGIN_DOMAIN_LAM,         &
-                                     TARGET_DOMAIN_LAM,         &
-                                     regrid_method_lfric2lfric, &
+  use lfric2lfric_config_mod, only : ORIGIN_DOMAIN_LAM,     &
+                                     TARGET_DOMAIN_LAM,     &
+                                     regrid_method_map,     &
                                      key_from_target_domain
 
 
@@ -69,10 +69,10 @@ module lfric2lfric_check_conf_mod
     end if
 
     ! Check that the regridding method is supported by lfric2lfric, currently
-    ! we do not support weights-lfric2lfric regridding
-    if( regrid_method == regrid_method_lfric2lfric ) then
+    ! we do not support weights-based regridding
+    if( regrid_method /= regrid_method_map ) then
       write( log_scratch_space, '(A)' ) &
-             'Weights-lfric2lfric regridding is not currently supported in lfric2lfric'
+             'Weights-based regridding is not currently supported in lfric2lfric'
       call log_event( log_scratch_space, LOG_LEVEL_ERROR)
     end if
 

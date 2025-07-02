@@ -15,24 +15,13 @@
         inherit = GENERATE_WEIGHTS, \
                   LFRICINPUTS_BASE, \
                   {{site_vars["scripts_platform"]|upper}}_WEIGHTS
-{% if task_ns.application == "lfric2lfric" %}
-        script = rose task-run --app-key=generate_weights -O lfric2lfric
-{% else %}
         script = rose task-run --app-key=generate_weights
-{% endif %}
         [[[environment]]]
             MPIRUN_N_JOBS = 8
             INTERPOLATION_DIRECTION = {{task_values["app_name"]}}
             LFRIC_MESH_FILE = {{mesh_dir}}/mesh_{{task_values["resolution"]}}.nc
-            LFRIC_MESH_NAME = {{task_values["mesh_name"]|default("")}}
-    {% if task_ns.application == "lfric2lfric" %}
-            DST_GRID_PATH = {{mesh_dir}}/mesh_{{task_values["dst_mesh"]}}.nc
-            DST_GRID_TYPE = {{task_values["dst_type"]}}
-            DST_MESH_NAME = {{task_values["dst_name"]}}
-            SRC_GRID_PATH = {{mesh_dir}}/mesh_{{task_values["src_mesh"]}}.nc
-            SRC_GRID_TYPE = {{task_values["src_type"]}}
-            SRC_MESH_NAME = {{task_values["src_name"]}}
-    {% elif task_values["app_name"] == "um2lfric" %}
+            LFRIC_MESH_NAME = {{task_values["mesh_name"]}}
+    {% if task_values["app_name"] == "um2lfric" %}
             WEIGHT_GEN_OPTION = {{task_values["weight_gen_option"]}}
             UM_START_DUMP = {{task_values["source_dump"]}}
             VARRES_FILE = {{task_values["var_res_src"]}}
