@@ -21,7 +21,6 @@ import argparse
 from collections import defaultdict
 
 # List of repos which files are extracted from
-# Omits shumlib as that is ignored for purposes of checking extract list
 REPOS_LIST = ["um", "ukca", "jules", "socrates", "casim"]
 
 # Files which need to be treated manually for each repo - eg. some header files
@@ -187,7 +186,6 @@ def check_for_uncompiled_files(set_of_copied_files, set_of_compiled_files):
 
     # For each repo generate set of uncompiled files and count total found
     # Only check repos included in REPOS_LIST defined above
-    # Shumlib ommitted from that list due to issues with ifdefs in files
     uncompiled_files = {}
     num_uncompiled = 0
     for source_repos in REPOS_LIST:

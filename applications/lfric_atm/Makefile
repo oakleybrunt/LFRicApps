@@ -20,6 +20,18 @@ export PSYCLONE_TRANSFORMATION ?= minimum
 
 export PROJECT_DIR := $(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 
+
+export EXTERNAL_DYNAMIC_LIBRARIES = shum
+
+# List of functions from shumlib that may be used by developers during debugging
+export IGNORE_DEPENDENCIES = c_shum_byteswap \
+                             f_shum_field_mod \
+                             f_shum_file_mod \
+                             f_shum_is_nan_mod \
+                             f_shum_is_inf_mod \
+                             f_shum_is_denormal_mod
+
+
 # Note - socrates_interface must come before jules_interface as there are dependencies on each other.
 export INTERNAL_DEPENDENCIES = $(CORE_ROOT_DIR)/infrastructure \
                                $(CORE_ROOT_DIR)/components/driver \
