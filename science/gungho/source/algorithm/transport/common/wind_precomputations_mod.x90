@@ -592,6 +592,8 @@ contains
   !> @return The time interval for a MoL substep
   function get_dt_mol_substep(self, mesh_id, direction, splitting, step) result(dt_mol_substep)
 
+    use split_transport_utils_mod, only: get_splitting_factor
+
     implicit none
 
     class(wind_precomputations_type), intent(inout) :: self
@@ -601,13 +603,14 @@ contains
     integer(kind=i_def),              intent(in)    :: step
 
     ! Internal variables
-    real(kind=r_tran)   :: dt_mol_substep
+    real(kind=r_tran)   :: dt_mol_substep, step_factor
     integer(kind=i_def) :: num_mol_substeps
 
     num_mol_substeps = self%get_number_mol_substeps(mesh_id, direction, splitting, step)
 
     ! Get the time interval for this step
-    dt_mol_substep = self%dt_substep / REAL(num_mol_substeps, r_tran)
+    step_factor = get_splitting_factor(splitting, step)
+    dt_mol_substep = self%dt_substep * step_factor / REAL(num_mol_substeps, r_tran)
 
   end function get_dt_mol_substep
 
