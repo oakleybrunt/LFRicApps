@@ -35,10 +35,28 @@
 
 {% set ex1a_perftools = 'module load perftools' %}
 
+{# If we are carrying out parallel debugging on the EX1A then we need #}
+{# the parallel debugger (Linaro DDT) in our path, a local location for #}
+{# our build, and to change the launcher #}
+{% if site_vars.PARALLEL_DEBUGGING_EX1A == true %}
+    {% set ex1a_ddt = """
+                      module load cray-dyninst/12.3.1.11;
+                      module load cray-cti/2.18.2.25;
+                      module load ddt
+                      """ %}
+    {% set BUILD_DIR = "${CYLC_TASK_WORK_DIR}/debug_build" %}
+    {% set RUN_METHOD = 'ddt' %}
+{# Standard job settings #}
+{% else %}
+    {% set ex1a_ddt = "" %}
+    {% set BUILD_DIR = "${TMPDIR}" %}
+    {% set RUN_METHOD = 'mpiexec' %}
+{% endif %}
+
     [[EX1A_BASE]]
         platform = {{site_vars.host_ex}}
         [[[environment]]]
-            BUILD_ROOT = ${TMPDIR}
+            BUILD_ROOT = {{BUILD_DIR}}
             HYPERTHREADS    = 1
             CORES_PER_NODE  = 128
             NUMA_REGIONS_PER_NODE = 2
@@ -63,7 +81,7 @@
             BIG_DATA_DIR = '/data/users/lfricadmin/data'
 {% endif %}
             TARGET_PLATFORM = 'meto-ex1a'
-            RUN_METHOD = 'mpiexec'
+            RUN_METHOD = {{RUN_METHOD}}
 
     [[EX1A_GNU]]
         [[[environment]]]
@@ -91,11 +109,11 @@
 
     [[EX1A_RUN_GNU]]
         inherit=EX1A_BASE,EX1A_RUN,EX1A_GNU
-        {{ generate_script("pre-script", [ex1a_base, ex1a_compiler_gnu, set_ulimit]) }}
+        {{ generate_script("pre-script", [ex1a_base, ex1a_compiler_gnu, set_ulimit, ex1a_ddt]) }}
 
     [[EX1A_RUN_CCE]]
         inherit=EX1A_BASE,EX1A_RUN,EX1A_CCE
-        {{ generate_script("pre-script", [ex1a_base, ex1a_compiler_cce, set_ulimit]) }}
+        {{ generate_script("pre-script", [ex1a_base, ex1a_compiler_cce, set_ulimit, ex1a_ddt]) }}
 
     [[EX1A_RUN_COUPLED_CCE]]
         inherit=EX1A_BASE,EX1A_RUN,EX1A_CCE
@@ -103,7 +121,8 @@
                                           ex1a_compiler_cce,
                                           ex1a_coupled_cce,
                                           ex1a_coupled_run,
-                                          set_ulimit]) }}
+                                          set_ulimit,
+                                          ex1a_ddt]) }}
 
     [[EX1A_RUN_PERFTOOLS-GNU]]
         inherit=EX1A_BASE,EX1A_RUN,EX1A_GNU

@@ -73,7 +73,7 @@ if [ "${TARGET_PLATFORM}" = "meto-ex1a" ] ; then
   DEPTH_VAL=${OMP_NUM_THREADS}
 
   # If the depth padding is present, and it is greater than the thread qty,
-  # we will use it instead. There may be occations where users use a pad, and 
+  # we will use it instead. There may be occations where users use a pad, and
   # threads where there are memory concerns
   if (( "${RANKS_DEPTH_PAD}" > "${OMP_NUM_THREADS}" )); then
     DEPTH_VAL=${RANKS_DEPTH_PAD}
@@ -135,6 +135,8 @@ fi
 # Construct launcher options
 #===========================================
 LAUNCHER_OPTS=""
+
+# mpiexec options
 if [ "${RUN_METHOD}" = "mpiexec" ] ; then
   if [ "${TARGET_PLATFORM}" = "meto-ex1a" ] ; then
     if (( "${CORES_PER_NODE_OVERRIDE}" == "0" )) && (( "${CHECK_LOCAL_CPUS_USED}" <= "${SET_CORES_PER_NODE}" )) ; then
@@ -145,25 +147,43 @@ if [ "${RUN_METHOD}" = "mpiexec" ] ; then
     else
       LAUNCHER_OPTS="--cpu-bind=depth --np ${TOTAL_RANKS} --depth ${DEPTH_VAL} --ppn ${SET_CORES_PER_NODE}"
     fi
-    if [[ ! -z "${XIOS_SERVER_MODE}" && "${XIOS_SERVER_MODE}" = "True" ]] ; then
-      if [ "${xios_nodes}" = "0" ] ; then
-	XIOS_OPTS=" : --cpu-bind=depth --np ${XIOS_SERVER_RANKS} "
-      else
-	XIOS_CORES_PER_NODE="$(( mpi_parts_xios / xios_nodes ))"
-	XIOS_OPTS=" : --cpu-bind=depth --np ${XIOS_SERVER_RANKS} --ppn ${XIOS_CORES_PER_NODE} "
-      fi
-    fi
-
   elif [ "${SITE_MPI_LAUNCHER_OPTS}" != "" ] ; then
-    LAUNCHER_OPTS=${SITE_MPI_LAUNCHER_OPTS}
-  else
-    LAUNCHER_OPTS="-n ${TOTAL_RANKS}"
-    if [[ ! -z "${XIOS_SERVER_MODE}" && "${XIOS_SERVER_MODE}" = "True" ]] ; then
-      XIOS_OPTS=" : -n ${XIOS_SERVER_RANKS} "
-    fi    
-  fi
+ 	  LAUNCHER_OPTS=${SITE_MPI_LAUNCHER_OPTS}
+ 	else
+ 	  LAUNCHER_OPTS="-n ${TOTAL_RANKS}"
+ 	fi
+# Executable launcher options
 elif [ "${RUN_METHOD}" = "executable" ] ; then
   LAUNCHER_OPTS=""
+# DDT Debugger options
+elif [ "${RUN_METHOD}" = "ddt" ] ; then
+  LAUNCHER_OPTS=" --connect -n ${TOTAL_RANKS:-1}"
+fi
+
+ 	# Construct XIOS options
+ 	#=======================
+if [ "${RUN_METHOD}" == "mpiexec" ] ; then
+  # XIOS Server mode
+  if [ "${TARGET_PLATFORM}" = "meto-ex1a" ] ; then
+    if [[ ! -z "${XIOS_SERVER_MODE}" && "${XIOS_SERVER_MODE}" = "True" ]] ; then
+      if [ "${xios_nodes}" = "0" ] ; then
+        XIOS_OPTS=" : --cpu-bind=depth --np ${XIOS_SERVER_RANKS} "
+      else
+        XIOS_CORES_PER_NODE="$(( mpi_parts_xios / xios_nodes ))"
+        XIOS_OPTS=" : --cpu-bind=depth --np ${XIOS_SERVER_RANKS} --ppn ${XIOS_CORES_PER_NODE} "
+      fi
+    fi
+  else
+    if [[ ! -z "${XIOS_SERVER_MODE}" && "${XIOS_SERVER_MODE}" = "True" ]] ; then
+      XIOS_OPTS=" : -n ${XIOS_SERVER_RANKS} "
+    fi
+  fi
+elif [ "${RUN_METHOD}" == "ddt" ] ; then
+  if [ "${TARGET_PLATFORM}" = "meto-ex1a" ] ; then
+    if [[ ! -z "${XIOS_SERVER_MODE}" && "${XIOS_SERVER_MODE}" = "True" ]] ; then
+      XIOS_OPTS=" : -np ${XIOS_SERVER_RANKS} --ppn ${XIOS_CORES_PER_NODE} "
+    fi
+  fi
 fi
 
 if [ -z "$XIOS_OPTS" ] ; then
@@ -175,16 +195,24 @@ fi
 #===============================================
 EXEC_COMMAND="${LAUNCHER} ${LAUNCHER_OPTS} ${EXEC_PATH} ${NAMELIST_FILE} ${XIOS_OPTS}${XIOS_SERVER_EXEC_PATH}"
 
-if [[ ! -z "${MEMORY_PROFILE}" && "${MEMORY_PROFILE}" = "True" ]] ; then
-  XIOS_MEM_TIME=""
-  if [[ ! -z "$XIOS_OPTS" ]] ; then
-    XIOS_MEM_TIME="/usr/bin/time -f max_mem_xios_server_%Mkb "
+# Memory Profiling Option
+# =======================
+# Memory profile doesn't work with DDT
+if [ "${RUN_METHOD}" != "ddt" ] ; then
+  if [[ ! -z "${MEMORY_PROFILE}" && "${MEMORY_PROFILE}" = "True" ]] ; then
+    XIOS_MEM_TIME=""
+    if [[ ! -z "$XIOS_OPTS" ]] ; then
+      XIOS_MEM_TIME="/usr/bin/time -f max_mem_xios_server_%Mkb "
+    fi
+    if [ "${TARGET_PLATFORM}" = "meto-ex1a" ] ; then
+      EXEC_COMMAND="${LAUNCHER} --line-buffer --label ${LAUNCHER_OPTS} /usr/bin/time -f max_mem_${EXEC_NAME}_%Mkb ${EXEC_PATH} ${NAMELIST_FILE} ${XIOS_OPTS}${XIOS_MEM_TIME}${XIOS_SERVER_EXEC_PATH}"
+    else
+      EXEC_COMMAND="${LAUNCHER} -l ${LAUNCHER_OPTS} /usr/bin/time -f max_mem_${EXEC_NAME}_%Mkb ${EXEC_PATH} ${NAMELIST_FILE} ${XIOS_OPTS}${XIOS_MEM_TIME}${XIOS_SERVER_EXEC_PATH}"
+    fi
   fi
-  if [ "${TARGET_PLATFORM}" = "meto-ex1a" ] ; then
-    EXEC_COMMAND="${LAUNCHER} --line-buffer --label ${LAUNCHER_OPTS} /usr/bin/time -f max_mem_${EXEC_NAME}_%Mkb ${EXEC_PATH} ${NAMELIST_FILE} ${XIOS_OPTS}${XIOS_MEM_TIME}${XIOS_SERVER_EXEC_PATH}"
-  else
-    EXEC_COMMAND="${LAUNCHER} -l ${LAUNCHER_OPTS} /usr/bin/time -f max_mem_${EXEC_NAME}_%Mkb ${EXEC_PATH} ${NAMELIST_FILE} ${XIOS_OPTS}${XIOS_MEM_TIME}${XIOS_SERVER_EXEC_PATH}"
-  fi
+else
+  echo "WARNING: 'memory_plot_ex' is not compatible with DDT - prioritising debugger"
+  echo ""
 fi
 
 if [ "${TEST_MODE}" = 0 ] ; then

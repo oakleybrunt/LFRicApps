@@ -62,6 +62,13 @@
 
 {% do site_vars.update({"lfricinputs_kgo_base": "$UMDIR/standard_jobs/lfricinputs/kgo"}) %}
 
+{# Enable parallel debugging on the EX1A #}
+{% if PARALLEL_DEBUGGING_EX1A is defined and PARALLEL_DEBUGGING_EX1A %}
+    {% do site_vars.update({"PARALLEL_DEBUGGING_EX1A" : true}) %}
+{% else %}
+    {% do site_vars.update({"PARALLEL_DEBUGGING_EX1A" : false}) %}
+{% endif %}
+
 {# Set fixed release version the KGO corresponds to #}
 {% set BASE = "vn"~VN %}
 {% include "site/meto/variables_azspice.cylc" %}
