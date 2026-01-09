@@ -22,4 +22,4 @@ rm -f "${EXEC_NAME}+pat"
 
 #build into exisiting exe with craypat
 #EXs
-pat_build "${EXEC_NAME}"
+pat_build -w -u -g pnetcdf,io "${EXEC_NAME}"

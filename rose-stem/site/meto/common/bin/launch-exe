@@ -26,7 +26,7 @@
 
 EXEC_PATH="${BIN_DIR}/${EXEC_NAME}${PAT_EXE_EXTEN}"
 NAMELIST_FILE=${EXTRA_NAMELIST_FILES:=configuration.nml}
-XIOS_SERVER_EXEC_PATH="xios_server.exe"
+XIOS_SERVER_EXEC_PATH="xios_server.exe+pat"
 SLURM_MPMD_FILE="lfric_xios_mpmd"
 
 # Set to run mode or script test mode
@@ -73,7 +73,7 @@ if [ "${TARGET_PLATFORM}" = "meto-ex1a" ] ; then
   DEPTH_VAL=${OMP_NUM_THREADS}
 
   # If the depth padding is present, and it is greater than the thread qty,
-  # we will use it instead. There may be occations where users use a pad, and 
+  # we will use it instead. There may be occations where users use a pad, and
   # threads where there are memory concerns
   if (( "${RANKS_DEPTH_PAD}" > "${OMP_NUM_THREADS}" )); then
     DEPTH_VAL=${RANKS_DEPTH_PAD}
@@ -160,7 +160,7 @@ if [ "${RUN_METHOD}" = "mpiexec" ] ; then
     LAUNCHER_OPTS="-n ${TOTAL_RANKS}"
     if [[ ! -z "${XIOS_SERVER_MODE}" && "${XIOS_SERVER_MODE}" = "True" ]] ; then
       XIOS_OPTS=" : -n ${XIOS_SERVER_RANKS} "
-    fi    
+    fi
   fi
 elif [ "${RUN_METHOD}" = "executable" ] ; then
   LAUNCHER_OPTS=""
