@@ -73,7 +73,7 @@ if [ "${TARGET_PLATFORM}" = "meto-ex1a" ] ; then
   DEPTH_VAL=${OMP_NUM_THREADS}
 
   # If the depth padding is present, and it is greater than the thread qty,
-  # we will use it instead. There may be occations where users use a pad, and 
+  # we will use it instead. There may be occations where users use a pad, and
   # threads where there are memory concerns
   if (( "${RANKS_DEPTH_PAD}" > "${OMP_NUM_THREADS}" )); then
     DEPTH_VAL=${RANKS_DEPTH_PAD}
@@ -149,8 +149,26 @@ if [ "${RUN_METHOD}" = "mpiexec" ] ; then
       if [ "${xios_nodes}" = "0" ] ; then
 	XIOS_OPTS=" : --cpu-bind=depth --np ${XIOS_SERVER_RANKS} "
       else
-	XIOS_CORES_PER_NODE="$(( mpi_parts_xios / xios_nodes ))"
-	XIOS_OPTS=" : --cpu-bind=depth --np ${XIOS_SERVER_RANKS} --ppn ${XIOS_CORES_PER_NODE} "
+        XIOS_CORES_PER_NODE="$(( mpi_parts_xios / xios_nodes ))"
+        XIOS_FRACTIONAL_DEPTH="$(( CORES_PER_NODE / XIOS_CORES_PER_NODE ))"
+        if (( "${XIOS_FRACTIONAL_DEPTH}" >= 128 )) ; then
+          XIOS_DEPTH=" --depth 128"
+        elif (( "${XIOS_FRACTIONAL_DEPTH}" >= 64 )) ; then
+          XIOS_DEPTH=" --depth 64"
+        elif (( "${XIOS_FRACTIONAL_DEPTH}" >= 32 )) ; then
+          XIOS_DEPTH=" --depth 32"
+        elif (( "${XIOS_FRACTIONAL_DEPTH}" >= 16 )) ; then
+          XIOS_DEPTH=" --depth 16"
+        elif (( "${XIOS_FRACTIONAL_DEPTH}" >= 8 )) ; then
+          XIOS_DEPTH=" --depth 8"
+        elif (( "${XIOS_FRACTIONAL_DEPTH}" >= 4 )) ; then
+          XIOS_DEPTH=" --depth 4"
+        elif (( "${XIOS_FRACTIONAL_DEPTH}" >= 2 )) ; then
+          XIOS_DEPTH=" --depth 2"
+        else
+          XIOS_DEPTH=""
+        fi
+        XIOS_OPTS=" : --cpu-bind=depth --np ${XIOS_SERVER_RANKS}${XIOS_DEPTH} --ppn ${XIOS_CORES_PER_NODE} "
       fi
     fi
 
@@ -160,7 +178,7 @@ if [ "${RUN_METHOD}" = "mpiexec" ] ; then
     LAUNCHER_OPTS="-n ${TOTAL_RANKS}"
     if [[ ! -z "${XIOS_SERVER_MODE}" && "${XIOS_SERVER_MODE}" = "True" ]] ; then
       XIOS_OPTS=" : -n ${XIOS_SERVER_RANKS} "
-    fi    
+    fi
   fi
 elif [ "${RUN_METHOD}" = "executable" ] ; then
   LAUNCHER_OPTS=""

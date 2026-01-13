@@ -248,7 +248,7 @@
 {% elif task_ns.conf_name == "nwp_gal9-C896_MG" %}
 
     {% do task_dict.update({
-        "opt_confs": ["um_dump"],
+        "opt_confs": ["um_dump", "oper_diags"],
         "resolution": "C896_MG",
         "DT": 240,
         "tsteps": 120,
