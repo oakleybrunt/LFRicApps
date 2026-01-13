@@ -24,9 +24,10 @@ for REPORT in "${PAT_REPORTS[@]}"
 do
     # Report is found in PREVIOUS_WORKING_DIR
     PAT_REPORT_TARGET=$PREVIOUS_WORKING_DIR"/"$REPORT
-    echo $PAT_REPORT_TARGET
 
-    components=$(echo $REPORT | tr "+" "\n")
+    # Split the perftools output name into component parts, sep='+'
+    IFS='+' read -r -a components <<< "$REPORT"
+    # Get app name from split name
     APP_NAME=${components[0]}
 
     echo "#####################################################################"
