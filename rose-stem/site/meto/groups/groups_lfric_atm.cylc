@@ -262,7 +262,7 @@
         "build_lfric_atm_ex1a_gnu_full-debug-32bit",
     ],
     "ddt_test": [
-        "lfric_atm_nwp_gal9-C224_MG_2T_ex1a_cce_fast-debug-32bit",
+        "lfric_atm_nwp_gal9_noukca_3n_1T-C192_MG_ex1a_gnu_fast-debug-32bit",
     ],
     }) %}
 

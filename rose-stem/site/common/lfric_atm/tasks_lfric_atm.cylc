@@ -171,7 +171,7 @@
 {% elif task_ns.conf_name == "nwp_gal9_noukca_3n_1T-C192_MG" %}
 
     {% do task_dict.update({
-        "opt_confs": ["physics_segmentation","no_dust","um_dump","no_diags"],
+        "opt_confs": ["physics_segmentation","um_dump","no_diags"],
         "resolution": "C192_MG",
         "DT": 720,
         "tsteps": 120,

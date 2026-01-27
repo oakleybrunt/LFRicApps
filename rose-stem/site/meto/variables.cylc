@@ -69,6 +69,14 @@
     {% do site_vars.update({"PARALLEL_DEBUGGING_EX1A" : false}) %}
 {% endif %}
 
+{# Set the method for DDT parallel debugging on the EX1A #}
+{# Will not be used unless PARALLEL_DEBUGGING_EX1A is also true #}
+{% if DDT_OFFLINE is defined and DDT_OFFLINE %}
+    {% do site_vars.update({"DDT_OFFLINE" : true}) %}
+{% else %}
+    {% do site_vars.update({"DDT_OFFLINE" : false}) %}
+{% endif %}
+
 {# Set fixed release version the KGO corresponds to #}
 {% set BASE = "vn"~VN %}
 {% include "site/meto/variables_azspice.cylc" %}

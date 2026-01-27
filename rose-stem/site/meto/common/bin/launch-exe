@@ -157,7 +157,12 @@ elif [ "${RUN_METHOD}" = "executable" ] ; then
   LAUNCHER_OPTS=""
 # DDT Debugger options
 elif [ "${RUN_METHOD}" = "ddt" ] ; then
-  LAUNCHER_OPTS=" --connect -n ${TOTAL_RANKS:-1}"
+  if [ "${DDT_OFFLINE}" = '1' ] ; then
+    DDT_METHOD='--offline --mem-debug'
+  else
+    DDT_METHOD='--connect --debug --log'
+  fi
+  LAUNCHER_OPTS="${DDT_METHOD} -n ${TOTAL_RANKS:-1}"
 fi
 
  	# Construct XIOS options
