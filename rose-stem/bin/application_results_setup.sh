@@ -8,10 +8,6 @@
 
 # Prepare results location
 mkdir -p $TASK_OUTPUT_DIR/results/
-if [ $LUSTRE_FILESYSTEM ]; then
-  # Set Lustre striping to maximum for results (performance)
-  lfs setstripe -c -1 $TASK_OUTPUT_DIR/results/
-fi
 
 # Symbolic link for each potential output file,
 # from `work` to `results`
