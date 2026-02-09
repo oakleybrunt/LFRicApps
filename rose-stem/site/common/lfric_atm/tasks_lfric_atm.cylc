@@ -206,19 +206,20 @@
 {% elif task_ns.conf_name == "nwp_gal9_1T-C224_MG_32x32" %}
 
     {% do task_dict.update({
-        "opt_confs": ["physics_segmentation","um_dump","june_case"],
+        "opt_confs": ["um_dump", "no_diags"],
         "resolution": "C224_MG",
         "DT": 720,
         "tsteps": 120,
         "mpi_parts": 294,
         "xios_nodes": 2,
         "mpi_parts_xios" : 64,
+        "task_ranks_per_node": 128,
     }) %}
 
 {% elif task_ns.conf_name == "nwp_gal9_2T-C224_MG_32x32" %}
 
     {% do task_dict.update({
-        "opt_confs": ["physics_segmentation","um_dump","june_case"],
+        "opt_confs": ["um_dump", "no_diags"],
         "resolution": "C224_MG",
         "DT": 720,
         "tsteps": 120,
@@ -232,7 +233,7 @@
 {% elif task_ns.conf_name == "nwp_gal9_4T-C224_MG_32x32" %}
 
     {% do task_dict.update({
-        "opt_confs": ["physics_segmentation","um_dump","june_case"],
+        "opt_confs": ["um_dump", "no_diags"],
         "resolution": "C224_MG",
         "DT": 720,
         "tsteps": 120,
@@ -246,7 +247,7 @@
 {% elif task_ns.conf_name == "nwp_gal9_1T-C224_MG_16x32" %}
 
     {% do task_dict.update({
-        "opt_confs": ["physics_segmentation","um_dump","june_case"],
+        "opt_confs": ["um_dump", "no_diags"],
         "resolution": "C224_MG",
         "DT": 720,
         "tsteps": 120,
@@ -254,12 +255,13 @@
         "threads": 1,
         "xios_nodes": 2,
         "mpi_parts_xios" : 64,
+        "task_ranks_per_node": 128,
     }) %}
 
 {% elif task_ns.conf_name == "nwp_gal9_2T-C224_MG_16x32" %}
 
     {% do task_dict.update({
-        "opt_confs": ["physics_segmentation","um_dump","june_case"],
+        "opt_confs": ["um_dump", "no_diags"],
         "resolution": "C224_MG",
         "DT": 720,
         "tsteps": 120,
@@ -267,37 +269,40 @@
         "threads": 2,
         "xios_nodes": 2,
         "mpi_parts_xios" : 64,
+        "task_ranks_per_node": 64,
     }) %}
 
 {% elif task_ns.conf_name == "nwp_gal9_4T-C224_MG_16x32" %}
 
     {% do task_dict.update({
-        "opt_confs": ["physics_segmentation","um_dump","june_case"],
+        "opt_confs": ["um_dump"],
         "resolution": "C224_MG",
         "DT": 720,
         "tsteps": 120,
         "mpi_parts": 147,
         "threads": 2,
         "xios_nodes": 2,
-        "mpi_parts_xios" : 32,
+        "mpi_parts_xios": 64,
+        "task_ranks_per_node": 32,
     }) %}
 
 {% elif task_ns.conf_name == "nwp_gal9_1T-C224_MG_16x16" %}
 
     {% do task_dict.update({
-        "opt_confs": ["um_dump"],
+        "opt_confs": ["um_dump", "no_diags"],
         "resolution": "C224_MG",
         "DT": 720,
         "tsteps": 360,
         "mpi_parts": 1176,
         "xios_nodes": 2,
-        "mpi_parts_xios" : 128,
+        "mpi_parts_xios" : 64,
+        "task_ranks_per_node": 128,
     }) %}
 
 {% elif task_ns.conf_name == "nwp_gal9_2T-C224_MG_16x16" %}
 
     {% do task_dict.update({
-        "opt_confs": ["um_dump"],
+        "opt_confs": ["um_dump", "no_diags"],
         "resolution": "C224_MG",
         "DT": 720,
         "tsteps": 360,
@@ -305,19 +310,21 @@
         "threads": 2,
         "xios_nodes": 2,
         "mpi_parts_xios" : 64,
+        "task_ranks_per_node": 64,
     }) %}
 
 {% elif task_ns.conf_name == "nwp_gal9_4T-C224_MG_16x16" %}
 
     {% do task_dict.update({
-        "opt_confs": ["um_dump"],
+        "opt_confs": ["um_dump", "no_diags"],
         "resolution": "C224_MG",
         "DT": 720,
         "tsteps": 360,
         "mpi_parts": 294,
         "threads": 4,
         "xios_nodes": 2,
-        "mpi_parts_xios" : 32,
+        "mpi_parts_xios" : 64,
+        "task_ranks_per_node": 32,
     }) %}
 
 
@@ -351,7 +358,7 @@
 {% elif task_ns.conf_name == "nwp_gal9_1T-C896_MG_32x32" %}
 
     {% do task_dict.update({
-        "opt_confs": ["um_dump"],
+        "opt_confs": ["um_dump", "no_diags"],
         "resolution": "C896_MG",
         "DT": 240,
         "tsteps": 360,
@@ -365,7 +372,7 @@
 {% elif task_ns.conf_name == "nwp_gal9_2T-C896_MG_32x32" %}
 
     {% do task_dict.update({
-        "opt_confs": ["um_dump"],
+        "opt_confs": ["um_dump", "no_diags"],
         "resolution": "C896_MG",
         "DT": 240,
         "tsteps": 360,
@@ -379,7 +386,7 @@
 {% elif task_ns.conf_name == "nwp_gal9_4T-C896_MG_32x32" %}
 
     {% do task_dict.update({
-        "opt_confs": ["um_dump"],
+        "opt_confs": ["um_dump", "no_diags"],
         "resolution": "C896_MG",
         "DT": 240,
         "tsteps": 360,
@@ -393,7 +400,7 @@
 {% elif task_ns.conf_name == "nwp_gal9_1T-C896_MG_16x32" %}
 
     {% do task_dict.update({
-        "opt_confs": ["um_dump"],
+        "opt_confs": ["um_dump", "no_diags"],
         "resolution": "C896_MG",
         "DT": 240,
         "tsteps": 360,
@@ -407,7 +414,7 @@
 {% elif task_ns.conf_name == "nwp_gal9_2T-C896_MG_16x32" %}
 
     {% do task_dict.update({
-        "opt_confs": ["um_dump"],
+        "opt_confs": ["um_dump", "no_diags"],
         "resolution": "C896_MG",
         "DT": 240,
         "tsteps": 360,
@@ -421,7 +428,7 @@
 {% elif task_ns.conf_name == "nwp_gal9_4T-C896_MG_16x32" %}
 
     {% do task_dict.update({
-        "opt_confs": ["um_dump"],
+        "opt_confs": ["um_dump", "no_diags"],
         "resolution": "C896_MG",
         "DT": 240,
         "tsteps": 360,
@@ -435,7 +442,7 @@
 {% elif task_ns.conf_name == "nwp_gal9_1T-C896_MG_16x16" %}
 
     {% do task_dict.update({
-        "opt_confs": ["um_dump"],
+        "opt_confs": ["um_dump", "no_diags"],
         "resolution": "C896_MG",
         "DT": 240,
         "tsteps": 360,
@@ -449,7 +456,7 @@
 {% elif task_ns.conf_name == "nwp_gal9_2T-C896_MG_16x16" %}
 
     {% do task_dict.update({
-        "opt_confs": ["um_dump"],
+        "opt_confs": ["um_dump", "no_diags"],
         "resolution": "C896_MG",
         "DT": 240,
         "tsteps": 360,
@@ -463,7 +470,7 @@
 {% elif task_ns.conf_name == "nwp_gal9_4T-C896_MG_16x16" %}
 
     {% do task_dict.update({
-        "opt_confs": ["um_dump"],
+        "opt_confs": ["um_dump", "no_diags"],
         "resolution": "C896_MG",
         "DT": 240,
         "tsteps": 360,

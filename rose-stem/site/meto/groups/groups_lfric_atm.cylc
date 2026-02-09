@@ -262,6 +262,12 @@
         "build_lfric_atm_ex1a_gnu_full-debug-32bit",
     ],
     "lfric_atm_threaded_testing_c224": [
+        "lfric_atm_nwp_gal9_1T-C224_MG_32x32_ex1a_cce_production-32bit",
+        "lfric_atm_nwp_gal9_2T-C224_MG_32x32_ex1a_cce_production-32bit",
+        "lfric_atm_nwp_gal9_4T-C224_MG_32x32_ex1a_cce_production-32bit",
+        "lfric_atm_nwp_gal9_1T-C224_MG_16x32_ex1a_cce_production-32bit",
+        "lfric_atm_nwp_gal9_2T-C224_MG_16x32_ex1a_cce_production-32bit",
+        "lfric_atm_nwp_gal9_4T-C224_MG_16x32_ex1a_cce_production-32bit",
         "lfric_atm_nwp_gal9_1T-C224_MG_16x16_ex1a_cce_production-32bit",
         "lfric_atm_nwp_gal9_2T-C224_MG_16x16_ex1a_cce_production-32bit",
         "lfric_atm_nwp_gal9_4T-C224_MG_16x16_ex1a_cce_production-32bit",
