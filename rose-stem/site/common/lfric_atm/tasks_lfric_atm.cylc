@@ -400,7 +400,7 @@
 {% elif task_ns.conf_name == "nwp_gal9_4T-C224_MG_16x32_genoa" %}
 
     {% do task_dict.update({
-        "opt_confs": ["um_dump"],
+        "opt_confs": ["june_case", "um_dump", "no_diags"],
         "resolution": "C224_MG",
         "DT": 720,
         "tsteps": 120,
@@ -452,34 +452,7 @@
         "task_ranks_per_node": 48,
     }) %}
 
-
-{% elif task_ns.conf_name == "nwp_gal9_oper-C224_MG" %}
-
-    {% do task_dict.update({
-        "opt_confs": ["um_dump","june_case","oper_diags"],
-        "resolution": "C224_MG",
-        "DT": 720,
-        "tsteps": 60,
-        "mpi_parts": 588,
-        "xios_nodes": 1,
-        "mpi_parts_xios" : 64,
-        "log_level": "info",
-        "memory_plot_ex": true,
-    }) %}
-
-{% elif task_ns.conf_name == "nwp_gal9_debug-C224_MG" %}
-
-    {% do task_dict.update({
-        "opt_confs": ["um_dump","june_case","no_diags"],
-        "resolution": "C224_MG",
-        "DT": 720,
-        "tsteps": 6,
-        "mpi_parts": 588,
-        "xios_nodes": 1,
-        "mpi_parts_xios" : 64,
-        "log_level": "error",
-    }) %}
-
+{# C896 #}
 {% elif task_ns.conf_name == "nwp_gal9_1T-C896_MG_32x32_milan" %}
 
     {% do task_dict.update({
