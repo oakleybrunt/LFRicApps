@@ -147,7 +147,9 @@
 {% endif %}
 {% if SITE~"-"~task_ns.platform == 'meto-ex1a' %}
     {% if "CXI_MATCH_hybrid" in task_values and task_values["CXI_MATCH_hybrid"] %}
-            FI_CXI_RX_MATCH_MODE    = "hybrid"
+            FI_CXI_RX_MATCH_MODE    = "software"
+            FI_CXI_RDZV_THRESHOLD = 131072
+            FI_CXI_RDZV_EAGER_SIZE = 16384
     {% endif %}
 {% endif %}
 

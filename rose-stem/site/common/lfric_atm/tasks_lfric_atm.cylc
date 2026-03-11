@@ -705,6 +705,114 @@
         "task_ranks_per_node": 48,
     }) %}
 
+{% elif task_ns.conf_name == "nwp_gal9_98n_1T-C896_MG_genoa" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["um_dump", "no_diags"],
+        "resolution": "C896_MG",
+        "CXI_MATCH_hybrid": true,
+        "DT": 240,
+        "tsteps": 360,
+        "mpi_parts": 12544,
+        "panel_decomp": "custom",
+        "xproc": 112,
+        "yproc": 56,
+        "xios_nodes": 8,
+        "mpi_parts_xios": 128,
+        "threads": 1,
+        "task_ranks_per_node": 192,
+    }) %}
+
+{% elif task_ns.conf_name == "nwp_gal9_98n_2T-C896_MG_genoa" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["um_dump", "no_diags"],
+        "resolution": "C896_MG",
+        "CXI_MATCH_hybrid": true,
+        "DT": 240,
+        "tsteps": 360,
+        "mpi_parts": 6272,
+        "panel_decomp": "custom",
+        "xproc": 56,
+        "yproc": 56,
+        "xios_nodes": 8,
+        "mpi_parts_xios": 128,
+        "threads": 2,
+        "task_ranks_per_node": 96,
+    }) %}
+
+{% elif task_ns.conf_name == "nwp_gal9_98n_4T-C896_MG_genoa" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["um_dump", "no_diags"],
+        "resolution": "C896_MG",
+        "CXI_MATCH_hybrid": true,
+        "DT": 240,
+        "tsteps": 360,
+        "mpi_parts": 3136,
+        "panel_decomp": "custom",
+        "xproc": 56,
+        "yproc": 28,
+        "xios_nodes": 8,
+        "mpi_parts_xios": 128,
+        "threads": 4,
+        "task_ranks_per_node": 48,
+    }) %}
+
+{% elif task_ns.conf_name == "nwp_gal9_98n_1T-C896_MG_milan" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["um_dump", "no_diags"],
+        "resolution": "C896_MG",
+        "CXI_MATCH_hybrid": true,
+        "DT": 240,
+        "tsteps": 360,
+        "mpi_parts": 12544,
+        "panel_decomp": "custom",
+        "xproc": 112,
+        "yproc": 56,
+        "xios_nodes": 8,
+        "mpi_parts_xios": 128,
+        "threads": 1,
+        "task_ranks_per_node": 128,
+    }) %}
+
+{% elif task_ns.conf_name == "nwp_gal9_98n_2T-C896_MG_milan" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["um_dump", "no_diags"],
+        "resolution": "C896_MG",
+        "CXI_MATCH_hybrid": true,
+        "DT": 240,
+        "tsteps": 360,
+        "mpi_parts": 6272,
+        "panel_decomp": "custom",
+        "xproc": 56,
+        "yproc": 56,
+        "xios_nodes": 8,
+        "mpi_parts_xios": 128,
+        "threads": 2,
+        "task_ranks_per_node": 64,
+    }) %}
+
+{% elif task_ns.conf_name == "nwp_gal9_98n_4T-C896_MG_milan" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["um_dump", "no_diags"],
+        "resolution": "C896_MG",
+        "CXI_MATCH_hybrid": true,
+        "DT": 240,
+        "tsteps": 360,
+        "mpi_parts": 3136,
+        "panel_decomp": "custom",
+        "xproc": 56,
+        "yproc": 28,
+        "xios_nodes": 8,
+        "mpi_parts_xios": 128,
+        "threads": 4,
+        "task_ranks_per_node": 32,
+    }) %}
+
 {% elif task_ns.conf_name == "nwp_gal9_coarse_aero-C48_MG" %}
 
     {% do task_dict.update({
