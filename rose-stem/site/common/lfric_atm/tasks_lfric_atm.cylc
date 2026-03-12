@@ -299,6 +299,20 @@
         "task_ranks_per_node": 128,
     }) %}
 
+{% elif task_ns.conf_name == "nwp_gal9_1T-C224_MG_16x16_milan_singlets" %}
+
+    {% do task_dict.update({
+        "opt_confs": ["june_case", "um_dump", "no_diags"],
+        "resolution": "C224_MG",
+        "DT": 720,
+        "tsteps": 1,
+        "mpi_parts": 1176,
+        "xios_nodes": 2,
+        "mpi_parts_xios" : 64,
+        "task_ranks_per_node": 128,
+        "CXI_MATCH_hybrid": true,
+    }) %}
+
 {% elif task_ns.conf_name == "nwp_gal9_2T-C224_MG_16x16_milan" %}
 
     {% do task_dict.update({
