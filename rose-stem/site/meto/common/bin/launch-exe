@@ -73,7 +73,7 @@ if [ "${TARGET_PLATFORM}" = "meto-ex1a" ] ; then
   DEPTH_VAL=${OMP_NUM_THREADS}
 
   # If the depth padding is present, and it is greater than the thread qty,
-  # we will use it instead. There may be occations where users use a pad, and 
+  # we will use it instead. There may be occations where users use a pad, and
   # threads where there are memory concerns
   if (( "${RANKS_DEPTH_PAD}" > "${OMP_NUM_THREADS}" )); then
     DEPTH_VAL=${RANKS_DEPTH_PAD}
@@ -180,7 +180,7 @@ if [ "${RUN_METHOD}" = "mpiexec" ] ; then
     LAUNCHER_OPTS="-n ${TOTAL_RANKS}"
     if [[ ! -z "${XIOS_SERVER_MODE}" && "${XIOS_SERVER_MODE}" = "True" ]] ; then
       XIOS_OPTS=" : -n ${XIOS_SERVER_RANKS} "
-    fi    
+    fi
   fi
 elif [ "${RUN_METHOD}" = "executable" ] ; then
   LAUNCHER_OPTS=""
@@ -222,13 +222,17 @@ echo Execute command is:
 echo ""
 echo ${EXEC_COMMAND}
 echo ""
-echo Running ...
+echo Running LD_PRELOAD
 echo ""
+export LD_PRELOAD=/home/users/oakley.brunt/tool/yaxt/lib/libyaxt_c.so.1:/home/users/oakley.brunt/tool/yaxt/lib/libyaxt.so.1
+echo ""
+echo Running ...
 ${EXEC_COMMAND}
 error=$?
 if [ ${error} != 0 ] ; then
   echo "Execution failed, Error return code ${error}."
 fi
+export LD_PRELOAD=""
 
 if [[ -v MEMORY_PROFILE && "${TARGET_PLATFORM}" = "meto-ex1a" ]] ; then
   # report on Memory usage in job.out
