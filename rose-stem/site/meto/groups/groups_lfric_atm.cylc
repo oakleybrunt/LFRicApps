@@ -323,6 +323,7 @@
     ],
     "lfric_atm_c224_milan": [
         "lfric_atm_nwp_gal9_1T-C224_MG_16x16_milan_singlets_ex1a_cce_production-32bit",
+        "lfric_atm_nwp_gal9_1T-C224_MG_16x16_milan_singlets_ex1a_gnu_fast-debug-32bit",
     ],
     }) %}
 
