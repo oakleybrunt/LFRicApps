@@ -103,10 +103,14 @@
 
 {# Set the method for DDT parallel debugging on the EX1A #}
 {# Will not be used unless PARALLEL_DEBUGGING_EX1A is also true #}
-{% if DDT_OFFLINE is defined and DDT_OFFLINE %}
-    {% do site_vars.update({"DDT_OFFLINE" : true}) %}
+{% if PARALLEL_DEBUGGING_EX1A is defined and PARALLEL_DEBUGGING_EX1A %}
+    {% if DDT_OFFLINE is defined and DDT_OFFLINE %}
+        {% do site_vars.update({"DDT_METHOD" : "--offline --mem-debug"}) %}
+    {% else %}
+        {% do site_vars.update({"DDT_METHOD" : "--connect --debug"}) %}
+    {% endif %}
 {% else %}
-    {% do site_vars.update({"DDT_OFFLINE" : false}) %}
+    {% do site_vars.update({"DDT_METHOD" : ""}) %}
 {% endif %}
 
 {# Set fixed release version the KGO corresponds to #}
