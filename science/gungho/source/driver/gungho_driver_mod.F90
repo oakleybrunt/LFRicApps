@@ -368,13 +368,16 @@ contains
     integer(kind=i_def)      :: ts_start, rc
     integer(tik)             :: tid_first, tid_rest
     !! System clock (time-per-timestep)
-    integer(i_long)  :: start, end, crate
+    integer(i_long)  :: tpt_start, tpt_end, tpt_crate
     real(r_double)   :: tstep_time_real, clock_rate
 
 #if defined(COUPLED) || defined(UM_PHYSICS)
     type( field_collection_type ), pointer :: depository => null()
+#endif
+
+#ifdef COUPLED
     !! System clock (time-per-timestep)
-    integer(i_long)  :: cpl_start, cpl_end
+    integer(i_long)  :: cpl_tpt_start, cpl_tpt_end
     real(r_double)   :: cpl_time_real
 #endif
 
@@ -405,9 +408,9 @@ contains
       end if
     end if
     ! Time per timestep
-    call system_clock(count_rate=crate)
-    clock_rate = real(crate, r_double)
-    call system_clock(start)
+    call system_clock(count_rate=tpt_crate)
+    clock_rate = real(tpt_crate, r_double)
+    call system_clock(tpt_start)
 #ifdef UM_PHYSICS
     nullify( surface_fields, ancil_fields )
 
@@ -457,7 +460,7 @@ contains
        call log_event( log_scratch_space, LOG_LEVEL_INFO )
 
        ! Coupling time-per-timestep
-       call system_clock(cpl_start)
+       call system_clock(cpl_tpt_start)
 
        depository => modeldb%fields%get_field_collection("depository")
        call save_sea_ice_frac_previous(depository)
@@ -469,8 +472,8 @@ contains
        call cpl_snd( modeldb )
 
        ! Time per timestep
-       call system_clock(cpl_end)
-       cpl_time_real = real((cpl_end - cpl_start)/clock_rate, r_double)
+       call system_clock(cpl_tpt_end)
+       cpl_time_real = real((cpl_tpt_end - cpl_tpt_start), r_double) / clock_rate
 
     endif
 #endif
@@ -556,8 +559,8 @@ contains
     nullify(mesh, twod_mesh)
 
     ! Time per timestep
-    call system_clock(end)
-    tstep_time_real = real((end - start)/clock_rate, r_double)
+    call system_clock(tpt_end)
+    tstep_time_real = real((tpt_end - tpt_start), r_double) / clock_rate
 
     write( log_scratch_space, &
            '(A,f21.4,A)' ) &

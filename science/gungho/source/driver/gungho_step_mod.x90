@@ -118,14 +118,14 @@ module gungho_step_mod
     !! timing_mod
     integer( tik )   :: id
     !! System clock (time-per-timestep)
-    integer(i_long)  :: start, end, crate
+    integer(i_long)  :: tpt_start, tpt_end, tpt_crate
     real(r_double)   :: tstep_time_real, clock_rate
 
     ! timing_mod
     if ( LPROF ) call start_timing( id, 'gungho_timestep' )
     ! Time per timestep
-    call system_clock(count_rate=crate)
-    clock_rate = real(crate, r_double)
+    call system_clock(count_rate=tpt_crate)
+    clock_rate = real(tpt_crate, r_double)
 
     write( log_scratch_space, '("/", A, "\ ")' ) repeat( "*", 76 )
     call log_event( log_scratch_space, LOG_LEVEL_TRACE )
@@ -134,7 +134,7 @@ module gungho_step_mod
     call log_event( log_scratch_space, LOG_LEVEL_INFO )
 
     ! Time per timestep
-    call system_clock(start)
+    call system_clock(tpt_start)
 
     if ( encorr_usage /= encorr_usage_none .or. write_conservation_diag ) then
       temp_corr_io_value => get_io_value( modeldb%values, 'temperature_correction_io_value')
@@ -243,8 +243,8 @@ module gungho_step_mod
     call log_event( log_scratch_space, LOG_LEVEL_INFO )
 
     ! Time per timestep
-    call system_clock(end)
-    tstep_time_real = real((end - start)/clock_rate, r_double)
+    call system_clock(tpt_end)
+    tstep_time_real = real((tpt_end - tpt_start), r_double) / clock_rate
 
     write( log_scratch_space, &
            '(A,I0)' ) '( TPT ) Summary for timestep ', model_clock%get_step()
