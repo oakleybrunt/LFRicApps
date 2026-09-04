@@ -60,6 +60,7 @@ module gungho_driver_mod
                                           log_scratch_space
   use mesh_mod,                    only : mesh_type
   use mesh_collection_mod,         only : mesh_collection
+  use ops_timer_mod,               only : ops_timer_type
   use remove_field_collection_mod, only : remove_field_collection
   use section_choice_config_mod,   only : iau,                   &
                                           iau_sst,               &
