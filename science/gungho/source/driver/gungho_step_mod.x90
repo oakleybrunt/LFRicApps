@@ -12,8 +12,7 @@
 module gungho_step_mod
 
   use conservation_algorithm_mod,     only : conservation_algorithm
-  use constants_mod,                  only : i_def, r_def, l_def, i_long, &
-                                             r_double
+  use constants_mod,                  only : i_def, r_def, l_def
   use energy_correction_config_mod,   only : encorr_usage,      &
                                              encorr_usage_none, &
                                              reset_hours
@@ -113,7 +112,6 @@ module gungho_step_mod
 
     real( r_def )    :: dt
     logical( l_def ) :: use_moisture
-
     integer( tik )   :: id
 
     if ( LPROF ) call start_timing( id, 'gungho_timestep' )
@@ -229,7 +227,6 @@ module gungho_step_mod
     call log_event( log_scratch_space, LOG_LEVEL_INFO )
     write( log_scratch_space, '("\", A, "/ ")' ) repeat( "*", 76 )
     call log_event( log_scratch_space, LOG_LEVEL_INFO )
-
     if ( LPROF ) call stop_timing( id, 'gungho_timestep' )
 
   end subroutine gungho_step
