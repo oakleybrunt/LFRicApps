@@ -367,18 +367,14 @@ contains
     type(mesh_type), pointer :: twod_mesh => null()
     integer(kind=i_def)      :: ts_start, rc
     integer(tik)             :: tid_first, tid_rest
-    !! System clock (time-per-timestep)
-    integer(i_long)  :: tpt_start, tpt_end, tpt_crate
-    real(r_double)   :: tstep_time_real, clock_rate
+    type(ops_timer_type)     :: gungho_driver_step_timer, gungho_step_timer
 
 #if defined(COUPLED) || defined(UM_PHYSICS)
     type( field_collection_type ), pointer :: depository => null()
 #endif
 
 #ifdef COUPLED
-    !! System clock (time-per-timestep)
-    integer(i_long)  :: cpl_tpt_start, cpl_tpt_end
-    real(r_double)   :: cpl_time_real
+    type(ops_timer_type) :: coupled_timer
 #endif
 
     type( field_collection_type ), pointer :: lbc_fields
@@ -408,9 +404,7 @@ contains
       end if
     end if
     ! Time per timestep
-    call system_clock(count_rate=tpt_crate)
-    clock_rate = real(tpt_crate, r_double)
-    call system_clock(tpt_start)
+    call gungho_driver_step_timer%start_timer("(TPT) gungho_driver_step")
 #ifdef UM_PHYSICS
     nullify( surface_fields, ancil_fields )
 
@@ -460,7 +454,7 @@ contains
        call log_event( log_scratch_space, LOG_LEVEL_INFO )
 
        ! Coupling time-per-timestep
-       call system_clock(cpl_tpt_start)
+       call coupled_timer%start_timer("(TPT) Coupler")
 
        depository => modeldb%fields%get_field_collection("depository")
        call save_sea_ice_frac_previous(depository)
@@ -471,9 +465,8 @@ contains
        ! Send all outgoing (ocean/seaice driving fields) to the coupler
        call cpl_snd( modeldb )
 
-       ! Time per timestep
-       call system_clock(cpl_tpt_end)
-       cpl_time_real = real((cpl_tpt_end - cpl_tpt_start), r_double) / clock_rate
+       ! Pause to write out later with gungho timer
+       call coupler_timer%pause_timer()
 
     endif
 #endif
@@ -515,7 +508,9 @@ contains
 #endif
 
     ! Perform a timestep
+    call gungho_step_timer%start_timer("(TPT) gungho_step")
     call gungho_step( mesh, twod_mesh, modeldb, modeldb%clock )
+    call gungho_step_timer%pause_timer()
 
     ! Use diagnostic output frequency to determine whether to write
     ! diagnostics on this timestep
@@ -559,24 +554,12 @@ contains
     nullify(mesh, twod_mesh)
 
     ! Time per timestep
-    call system_clock(tpt_end)
-    tstep_time_real = real((tpt_end - tpt_start), r_double) / clock_rate
-
-    write( log_scratch_space, &
-           '(A,f21.4,A)' ) &
-           '( TPT ) Time taken for gungho_driver timestep : ', tstep_time_real, '(s)'
-    call log_event( log_scratch_space, LOG_LEVEL_INFO )
-
 #ifdef COUPLED
-    write( log_scratch_space, &
-           '(A,f21.4,A)' ) &
-           '( TPT ) Time taken for coupler :                ', cpl_time_real, '(s)'
-    call log_event( log_scratch_space, LOG_LEVEL_INFO )
+    call coupled_timer%stop_timer()
 #endif
+    call gungho_step_timer%stop_timer()
+    call gungho_driver_step_timer%stop_timer()
 
-    ! End of timer info
-    write( log_scratch_space, '("\", A, "/ ")' ) repeat( "*", 76 )
-    call log_event( log_scratch_space, LOG_LEVEL_INFO )
 
     if ( LPROF ) then
       if ( modeldb%clock%get_step() == ts_start ) then
