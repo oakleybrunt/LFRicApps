@@ -467,7 +467,7 @@ contains
        call cpl_snd( modeldb )
 
        ! Pause to write out later with gungho timer
-       call coupler_timer%pause_timer()
+       call coupled_timer%pause_timer()
 
     endif
 #endif
