@@ -10,8 +10,7 @@
 module gungho_driver_mod
 
   use base_mesh_config_mod,        only : prime_mesh_name
-  use constants_mod,               only : r_def, l_def, str_def, i_def, &
-                                          i_long, r_double
+  use constants_mod,               only : r_def, l_def, str_def, i_def
   use derived_config_mod,          only : l_esm_couple
   use extrusion_mod,               only : TWOD
   use field_collection_mod,        only : field_collection_type
