@@ -59,7 +59,7 @@ module gungho_driver_mod
                                           log_scratch_space
   use mesh_mod,                    only : mesh_type
   use mesh_collection_mod,         only : mesh_collection
-  use ops_timer_mod,               only : ops_timer_type
+  use stopwatch_mod,               only : stopwatch_type
   use remove_field_collection_mod, only : remove_field_collection
   use section_choice_config_mod,   only : iau,                   &
                                           iau_sst,               &
@@ -367,14 +367,14 @@ contains
     type(mesh_type), pointer :: twod_mesh => null()
     integer(kind=i_def)      :: ts_start, rc
     integer(tik)             :: tid_first, tid_rest
-    type(ops_timer_type)     :: gungho_driver_step_timer, gungho_step_timer
+    type(stopwatch_type)     :: gungho_driver_stopwatch, gungho_step_stopwatch
 
 #if defined(COUPLED) || defined(UM_PHYSICS)
     type( field_collection_type ), pointer :: depository => null()
 #endif
 
 #ifdef COUPLED
-    type(ops_timer_type) :: coupled_timer
+    type(stopwatch_type) :: coupled_stopwatch
 #endif
 
     type( field_collection_type ), pointer :: lbc_fields
@@ -404,7 +404,7 @@ contains
       end if
     end if
     ! Time per timestep
-    call gungho_driver_step_timer%start_timer("(TPT) gungho_driver_step")
+    call gungho_driver_stopwatch%start("(TPT) gungho_driver_step")
 #ifdef UM_PHYSICS
     nullify( surface_fields, ancil_fields )
 
@@ -454,7 +454,7 @@ contains
        call log_event( log_scratch_space, LOG_LEVEL_INFO )
 
        ! Coupling time-per-timestep
-       call coupled_timer%start_timer("(TPT) Coupler")
+       call coupled_stopwatch%start("(TPT) Coupling timestep")
 
        depository => modeldb%fields%get_field_collection("depository")
        call save_sea_ice_frac_previous(depository)
@@ -466,7 +466,7 @@ contains
        call cpl_snd( modeldb )
 
        ! Pause to write out later with gungho timer
-       call coupled_timer%pause_timer()
+       call coupled_stopwatch%pause()
 
     endif
 #endif
@@ -508,9 +508,9 @@ contains
 #endif
 
     ! Perform a timestep
-    call gungho_step_timer%start_timer("(TPT) gungho_step")
+    call gungho_step_stopwatch%start("(TPT) gungho_step")
     call gungho_step( mesh, twod_mesh, modeldb, modeldb%clock )
-    call gungho_step_timer%pause_timer()
+    call gungho_step_stopwatch%pause()
 
     ! Use diagnostic output frequency to determine whether to write
     ! diagnostics on this timestep
@@ -553,12 +553,12 @@ contains
 
     nullify(mesh, twod_mesh)
 
-    ! Time per timestep
+    ! Stopwatches
 #ifdef COUPLED
-    call coupled_timer%stop_timer()
+    call coupled_stopwatch%stop()
 #endif
-    call gungho_step_timer%stop_timer()
-    call gungho_driver_step_timer%stop_timer()
+    call gungho_step_stopwatch%stop()
+    call gungho_driver_stopwatch%stop()
 
 
     if ( LPROF ) then
